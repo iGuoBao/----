@@ -1,0 +1,106 @@
+# STM32 MDK-ARM 项目 .gitignore
+
+# =========================
+# Keil MDK-ARM 构建文件
+# =========================
+# 构建输出目录
+MDK-ARM/HY4car/*.o      
+MDK-ARM/HY4car/*.d  
+MDK-ARM/HY4car/*.crf
+MDK-ARM/HY4car/*.htm
+MDK-ARM/HY4car/*.dep
+MDK-ARM/HY4car/*.axf
+MDK-ARM/HY4car/*.hex
+MDK-ARM/HY4car/*.bin
+MDK-ARM/HY4car/*.map
+MDK-ARM/HY4car/*.lnp
+MDK-ARM/HY4car/*.sct
+MDK-ARM/HY4car/*.Bak
+MDK-ARM/HY4car/*.build_log.htm
+MDK-ARM/HY4car/*.iex
+
+# Keil 用户界面配置文件
+MDK-ARM/*.uvguix
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+
+# =========================
+# STM32CubeMX 生成文件
+# =========================
+# 保留 .ioc 文件，但忽略一些临时文件
+*.tmp
+*.bak
+
+# =========================
+# 编译器和链接器文件
+# =========================
+*.lst
+*.map
+*.hex
+*.bin
+*.elf
+*.axf
+*.scvd
+
+# =========================
+# 调试文件
+# =========================
+*.jlink
+*.ini
+
+# =========================
+# IDE 相关文件
+# =========================
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Eclipse
+.metadata
+.recommenders
+.settings/
+.project
+.cproject
+
+# =========================
+# 系统文件
+# =========================
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# =========================
+# 日志和临时文件
+# =========================
+*.log
+*.tmp
+*.temp
+temp/
+cache/
+
+# =========================
+# 备份文件
+# =========================
+*.orig
+*.rej
+*~
+*.swp
+*.bak
+
+# =========================
+# 用户自定义
+# =========================
+# 如果有其他需要忽略的文件，请在此处添加
+
+MDK-ARM/HY4car/pathtracking.__i
