@@ -751,6 +751,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Application\ringbuffer.c</FilePath>
             </File>
+            <File>
+              <FileName>button.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Application\button.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

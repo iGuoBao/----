@@ -21,7 +21,7 @@ void turn_angle(float angle)
     //    {
     //        mpu6050_pid_control(0, target_angle);
     //    }
-    mpu6050_pid_reset(2.0, 0.0f, 0.2f, 120, 3000);
+    mpu6050_pid_reset(2.1, 0.0f, 0.2f, 120, 3000);
 
     // float radian = 0;
 
@@ -41,8 +41,22 @@ void turn_angle(float angle)
     //    {
     //        if(receive_flag){receive_flag=0;mpu6050_turn_angle(target_angle, 1);}
     //    }
-    while (fabsf(Normalization(target_angle - z_data)) > 5)
+    while (1)
     {
+         // 多次验证在误差里
+        static uint16_t flag = 0;
+        if (fabsf(Normalization(target_angle - z_data)) < 5)
+        {
+            flag++;
+        }
+
+        if (flag >= 10000){
+            flag = 0;
+            break;
+        }
+
+
+
         if (receive_flag)
         {
             receive_flag = 0;
@@ -146,7 +160,7 @@ void forward(int data)
         }
         else if (flag / 2 + 1 >= data * 0.85)
         {
-            speed = 60;
+            speed = 90;
         }
         else
         {
@@ -194,7 +208,7 @@ void forward_begin()
 void forward_slow()
 {
     motor_speed_set(70, 70);
-    delay_jx(1000);
+    delay_jx(1300);
     motor_speed_set(0, 0);
 }
 
@@ -295,7 +309,7 @@ void route(char Road[50])
         case 'b':
             // back(600);
             // forward(-1);
-            motor_speed_set(-70, -70);
+            motor_speed_set(-80, -80);
             delay_jx(1000);
             motor_speed_set(0, 0);
             break;

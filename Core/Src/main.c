@@ -24,6 +24,8 @@
 #include "usart.h"
 #include "gpio.h"
 
+#include "button.h"
+
 // /* Private includes ----------------------------------------------------------*/
 // /* USER CODE BEGIN Includes */
 // /* USER CODE END Includes */
@@ -147,7 +149,7 @@ int main(void)
     //     'b','w','L','L','w','1','L','2','L','1','K','L','L','w','1','R','2','R','1','O',
     // 'S','\0'}; //第一轮重启
 
-    static char test_s[100] = {'t','S'}; //测试用
+    static char test_s[100] = {'t','w','d','T','w','D','S'}; //测试用
     // static char test_s[100] = {'d','t','D','T'}; //测试用
     static char te1[100] ={
         // manfen
@@ -158,9 +160,14 @@ int main(void)
         'L','L','w','8','w','f','w','b','w',
         // 1 圆环
         'L','L','1','R','1','K','T','R','f','d','O','b',
-        // // 2 方块
-        // 'b','w','L','L','w','1','L','2','L','1','K','L','L','w','1','R','2','R','1','O',
+        // 2 方块
+        'b','w','L','L','w','1','L','2','L','1','K','L','L','w','1','R','2','R','1','O',
     'S','\0'}; //第一轮重启
+
+    static char test_9[100]={
+        'O','K','T','1','L','f','d','d','S'
+
+    };
 
     // static char test1[100] = {'2','R','1','R','1','L','3','d','O', 'L', '3', 'b', 'A', '1', 'R', '1','K', 'b','A','1','t','1','f','d','O','b','A','d',
 	// 														'3','K','1','t','1','f','d','O','b','A','d','4','L','3','K','L','2','T','L','f','f','f','O','b','A','1',
@@ -186,7 +193,12 @@ int main(void)
         // {
         //     NRF24L01_RX_Mode();
         // }
-        route(te1);
+        if (Button_IsPressed(BUTTON_PC0)) {
+            route(te1);
+            // route(test_s);
+            // route(test_9);
+        }
+
         //route(test_s);
 //				if(remote_data[0] != 0x32) continue;
 
