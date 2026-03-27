@@ -56,28 +56,21 @@ void Servos_down(int position) {
 
 //��ץ����
 void Servos_up(int position) {
-sprintf(k,"#000P2200T000%d\r\n",position);
-HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	sprintf(k,"#000P2200T000%d\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
 	delay(140); 
-	
 } 
 
 //��ץ�ſ�
 void Servos_open(int position) {	
-		sprintf(k,"#001P%dT0500\r\n",position);
-//	  delay(15);//15
-	delay(35);
-		HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-//		delay(25);//25
-	delay(35);
+	sprintf(k,"#001P%dT0500\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	delay(10);
 }
 //��ץ�պ�
 void Servos_close(int position) {
     sprintf(k,"#001P%dT0500\r\n",position);
-//		delay(15);//15
-	delay(135);
-		HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-//		delay(25);
-	delay(135);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	delay(10);
 }
 
