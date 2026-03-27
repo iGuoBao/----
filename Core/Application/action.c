@@ -4,12 +4,12 @@
 int count_zeros_8bit(uint8_t num)
 {
     if (num == 0)
-        return 8; // ȫ0ֱ�ӷ���8
+        return 8;
     int count = 0;
     for (int i = 0; i < 8; i++)
     {
         if (!(num & (1U << i)))
-            count++; // ����iλ�Ƿ�Ϊ0
+            count++;
     }
     return count;
 }
@@ -21,7 +21,7 @@ void turn_angle(float angle)
     //    {
     //        mpu6050_pid_control(0, target_angle);
     //    }
-    mpu6050_pid_reset(2.1, 0.0f, 0.2f, 120, 3000);
+    mpu6050_pid_reset(2.15, 0.05f, 0.2f, 120, 3000);
 
     // float radian = 0;
 
@@ -156,7 +156,7 @@ void forward(int data)
 
         if (data == 1 || data == 2)
         {
-            speed = 80;
+            speed = 90;
         }
         else if (flag / 2 + 1 >= data * 0.85)
         {
@@ -164,7 +164,7 @@ void forward(int data)
         }
         else
         {
-            speed = 100; // 200
+            speed = 120; // 200
         }
 
         if (back_flag) speed = -speed;
@@ -215,7 +215,7 @@ void forward_slow()
 void wait()
 {
     motor_speed_set(0, 0);
-    delay_jx(1000);
+    delay_jx(500);
 }
 
 void back(int len)
@@ -304,12 +304,14 @@ void route(char Road[50])
             Servos_open(1250);
             break;
         case 'f':
-            forward_slow();
+            motor_speed_set(70, 70);
+            delay_jx(1500);
+            motor_speed_set(0, 0);
             break;
         case 'b':
             // back(600);
             // forward(-1);
-            motor_speed_set(-80, -80);
+            motor_speed_set(-70, -70);
             delay_jx(1000);
             motor_speed_set(0, 0);
             break;

@@ -15,8 +15,8 @@ void delay(int time)
 
 void Servos_Init(void){
 
-	// HAL_UART_Transmit(&huart1, (uint8_t *)"#001PMOD1\r\n", 9, 0xffff);
-	delay(10);
+	HAL_UART_Transmit(&huart1, (uint8_t *)"#001PMOD1\r\n", 9, 0xffff);
+	HAL_Delay(100);
 	HAL_UART_Transmit(&huart1, (uint8_t *)"#000PMOD8\r\n", 9, 0xffff);
 }
 
