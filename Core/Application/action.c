@@ -21,7 +21,7 @@ void turn_angle(float angle)
     //    {
     //        mpu6050_pid_control(0, target_angle);
     //    }
-    mpu6050_pid_reset(2.15, 0.05f, 0.2f, 120, 3000);
+    mpu6050_pid_reset(1.80, 0.5f, 0.2f, 50, 3000);
 
     // float radian = 0;
 
@@ -43,22 +43,21 @@ void turn_angle(float angle)
     //    }
     while (1)
     {
-         // 多次验证在误差里
-        static uint16_t flag = 0;
-        if (fabsf(Normalization(target_angle - z_data)) < 5)
-        {
-            flag++;
-        }
-
-        if (flag >= 10000){
-            flag = 0;
-            break;
-        }
-
-
-
         if (receive_flag)
         {
+            // 多次验证在误差里
+            static uint16_t flag = 0;
+            if (fabsf(Normalization(target_angle - z_data)) < 5)
+            {
+                flag++;
+            }
+
+            if (flag >= 35)
+            {
+                flag = 0;
+                receive_flag = 0;
+                break;
+            }
             receive_flag = 0;
             mpu6050_turn_angle(target_angle, 1);
         }
@@ -134,7 +133,8 @@ void forward(int data)
     int back_flag = 0;
 
     // 如果data是负数 等会就倒车
-    if (data <0){
+    if (data < 0)
+    {
         back_flag = 1;
         data = -data;
     }
@@ -156,18 +156,19 @@ void forward(int data)
 
         if (data == 1 || data == 2)
         {
-            speed = 90;
+            speed = 80;
         }
         else if (flag / 2 + 1 >= data * 0.85)
         {
-            speed = 90;
+            speed = 80;
         }
         else
         {
-            speed = 120; // 200
+            speed = 80; // 200
         }
 
-        if (back_flag) speed = -speed;
+        if (back_flag)
+            speed = -speed;
         mpu6050_sevenway_control(speed);
     }
     // motor_speed_set(-50, -50);
@@ -215,7 +216,7 @@ void forward_slow()
 void wait()
 {
     motor_speed_set(0, 0);
-    delay_jx(500);
+    delay_20ms(50);
 }
 
 void back(int len)
@@ -230,10 +231,10 @@ void back(int len)
             encoder_total_l += encoderLeft;
             encoder_total_r += encoderRight;
             mpu6050_pid_control(-120, target_angle);
-            if (fabsf((encoder_total_l - encoder_total_r) / 2.0f) > len){
+            if (fabsf((encoder_total_l - encoder_total_r) / 2.0f) > len)
+            {
                 break;
             }
-                
         }
     }
 }
@@ -304,15 +305,20 @@ void route(char Road[50])
             Servos_open(1250);
             break;
         case 'f':
-            motor_speed_set(70, 70);
-            delay_jx(1500);
+            motor_speed_set(45, 45);
+            delay_20ms(70);
             motor_speed_set(0, 0);
             break;
         case 'b':
+            motor_speed_set(-70, -70);
+            delay_20ms(25);
+            motor_speed_set(0, 0);
+            break;
+        case 'B':
             // back(600);
             // forward(-1);
             motor_speed_set(-70, -70);
-            delay_jx(1000);
+            delay_20ms(40);
             motor_speed_set(0, 0);
             break;
         case 'w':
@@ -325,6 +331,8 @@ void route(char Road[50])
                 mpu6050_pid_control(0, target_angle);
             }
             break;
+        case 'x':
+            z_data = Normalization(z_data-5);
         default:
             break;
         }

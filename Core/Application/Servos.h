@@ -7,6 +7,9 @@
 
 #define OPEN  1
 #define CLOSE 2
+
+void delay_20ms(int time);
+
 void Servos_Init(void);
 void Servos_Lift(int lift);
 void Servos_Retract(int retract);

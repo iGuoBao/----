@@ -149,22 +149,25 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         mpu_dmp_get_data(&x_data, &y_data, &z);
         tim6_at++;
         // z=0.9*z+0.1*fter;
-        if (fabsf(prev - z) < 0.15f)
-            offset = offset + prev - z;
-        z_data = Normalization(z + offset);
+        // if (fabsf(prev - z) < 0.15f)
+        //     offset = offset + prev - z;
+        // z_data = Normalization(z + offset);
+        z_data = Normalization(z);
         motor_pid_control(left_speed, right_speed);
-
 
         if (!receive_flag)
             receive_flag = 1;
 
-        
+        static uint16_t oled_flag = 0;
+        if (oled_flag++ < 20)
+            return;
+
+        oled_flag = 0;
         sprintf(k, "%d  %d  ", encoderLeft, -encoderRight);
         OLED_ShowString(0, 0, k, OLED_8X16);
         OLED_ShowFloatNum(0, 16, z_data, 3, 3, OLED_8X16);
         OLED_ShowFloatNum(0, 32, target_angle, 3, 3, OLED_8X16);
         OLED_ShowFloatNum(0, 48, prev - z, 1, 3, OLED_8X16);
-
         OLED_Update();
         prev = z;
     }
