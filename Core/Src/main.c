@@ -191,16 +191,9 @@ int main(void)
     while (1)
 
     {
-        // remote_data[1] = 0x00;
-        // if(NRF24L01_RxPacket(remote_data))
-        // {
-        //     NRF24L01_RX_Mode();
-        // }
         if (Button_IsPressed(BUTTON_PC0))
         {
             route(test5);
-            // route(test_s);
-            // route(test_9);
         }
     }
 }

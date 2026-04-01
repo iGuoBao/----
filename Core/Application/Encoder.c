@@ -1,17 +1,28 @@
 #include "Encoder.h"
+#include "GlobalLocalization.h"
+#include "car_type.h"
 #include <stdlib.h>
 int16_t encoderLeft, encoderRight;
 int sevenway_data;
-int32_t encoder_total_l; // �ۼ���������
-int32_t encoder_total_r; // �ۼ���������
+int32_t encoder_total_l; 
+int32_t encoder_total_r; 
+
 int left_speed, right_speed;
 float x_data, y_data, z_data;
-int32_t target_pulses = 0; // Ŀ��������
+int32_t target_pulses = 0; 
 uint32_t tim6_at;
 uint8_t remote_data[9] = {0};
-char k[20] = "";
 uint8_t tx_data[6];
 uint8_t receive_flag, seven_ff;
+
+
+int16_t encoder_left_speed_mm_s, encoder_right_speed_mm_s; // 存储左右轮的速度 mm/s
+int16_t encoder_speed_mm_s;                           // 存储小车的线速度 mm/s
+int16_t encoder_left_angular_speed_deg_s, encoder_right_angular_speed_deg_s; // 左右轮角速度 deg/s
+int16_t encoder_angular_speed_deg_s; // 小车角速度 deg/s
+float encoder_angular_speed_rad_s; // 小车角速度 rad/s
+
+
 void Encoder_Init(void)
 {
     HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL); // ����������ģʽ
@@ -73,6 +84,41 @@ void Encoder_Get(void)
     encoderRight = __HAL_TIM_GetCounter(&htim3); // ��ȡ����ֵ
     // encoder_total_r += encoderRight;
     __HAL_TIM_SetCounter(&htim3, 0); // ��ռ���ֵ
+
+    #define ENCODER_INTERVAL_MS 20 // 编码器速度计算的时间间隔，单位毫秒
+
+        // 计算每脉冲对应的毫米数
+    float mm_per_pulse = (float)WHEEL_CIRCUMFERENCE_MM / (float)WHEEL_PULSES_PER_REV;
+    // 速度换算因子：从每 ENCODER_INTERVAL_MS 毫秒的脉冲数 -> mm/s
+    float speed_factor = 1000.0f / ENCODER_INTERVAL_MS;
+    /* 计算左右轮速度（mm/s），使用 32 位中间结果防止溢出 */
+    float left_speed_f = (float)encoderLeft * mm_per_pulse * speed_factor;
+    float right_speed_f = (float)encoderRight * mm_per_pulse * speed_factor;
+    right_speed_f = -right_speed_f; // 右轮编码器方向相反，取负值
+    /* 截断为 int16_t 存储（保持原有接口），同时保存角速度 */
+    if (left_speed_f > (float)INT16_MAX) left_speed_f = (float)INT16_MAX;
+    if (left_speed_f < (float)INT16_MIN) left_speed_f = (float)INT16_MIN;
+    if (right_speed_f > (float)INT16_MAX) right_speed_f = (float)INT16_MAX;
+    if (right_speed_f < (float)INT16_MIN) right_speed_f = (float)INT16_MIN;
+    encoder_left_speed_mm_s = (int16_t)left_speed_f;
+    encoder_right_speed_mm_s = (int16_t)right_speed_f;
+    
+    /* 计算小车线速度 mm/s（两轮平均，沿X轴前进方向） */
+    encoder_speed_mm_s = (int16_t)(((int32_t)encoder_left_speed_mm_s + (int32_t)encoder_right_speed_mm_s) / 2);
+
+    // 计算左右轮角速度 deg/s（单轮自转速度）
+    float left_angular_speed_f = ((float)encoder_left_speed_mm_s / (float)WHEEL_CIRCUMFERENCE_MM) * 360.0f;
+    float right_angular_speed_f = ((float)encoder_right_speed_mm_s / (float)WHEEL_CIRCUMFERENCE_MM) * 360.0f;
+    encoder_left_angular_speed_deg_s = (int16_t)left_angular_speed_f;
+    encoder_right_angular_speed_deg_s = (int16_t)right_angular_speed_f;
+    
+    // 小车角速度 deg/s（绕Z轴，ROS标准：逆时针为正）
+    // 公式: ω = (v_right - v_left) / wheel_base
+    // 右轮快 → 左转 → Yaw增大（逆时针）→ 角速度为正
+    float angular_speed_f = ((float)encoder_right_speed_mm_s - (float)encoder_left_speed_mm_s) / (float)WHEEL_BASE_MM * (180.0f / 3.1415926f);
+    encoder_angular_speed_deg_s = (int16_t)angular_speed_f;
+    encoder_angular_speed_rad_s = ((float)encoder_right_speed_mm_s - (float)encoder_left_speed_mm_s) / (float)WHEEL_BASE_MM;
+
 }
 
 void StartRotation(int turns, int speed, uint8_t left_or_right)
@@ -145,13 +191,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
     else if (htim == &htim6) // ����ת��20ms
     {
-        Encoder_Get();
-        mpu_dmp_get_data(&x_data, &y_data, &z);
+        // Encoder_Get();
+        // mpu_dmp_get_data(&x_data, &y_data, &z);
+        GlobalLoc_Periodic();
+        GlobalPose_t pose = GlobalLoc_GetPose();
+        z = pose.yaw;
         tim6_at++;
-        // z=0.9*z+0.1*fter;
-        // if (fabsf(prev - z) < 0.15f)
-        //     offset = offset + prev - z;
-        // z_data = Normalization(z + offset);
         z_data = Normalization(z);
         motor_pid_control(left_speed, right_speed);
 
@@ -161,13 +206,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         static uint16_t oled_flag = 0;
         if (oled_flag++ < 20)
             return;
-
+        char k[40] = "";
         oled_flag = 0;
-        sprintf(k, "%d  %d  ", encoderLeft, -encoderRight);
+        // 显示坐标
+        sprintf(k, "X: %4d Y: %4d", pose.x_mm, pose.y_mm);
         OLED_ShowString(0, 0, k, OLED_8X16);
-        OLED_ShowFloatNum(0, 16, z_data, 3, 3, OLED_8X16);
-        OLED_ShowFloatNum(0, 32, target_angle, 3, 3, OLED_8X16);
-        OLED_ShowFloatNum(0, 48, prev - z, 1, 3, OLED_8X16);
+        // 显示航向
+        sprintf(k, "Yaw: %3.2f", pose.yaw);
+        OLED_ShowString(0, 16, k, OLED_8X16);
+        // 显示grid
+        sprintf(k, "Grid: %2d,%2d", pose.x_grid, pose.y_grid);
+        OLED_ShowString(0, 32, k, OLED_8X16);
         OLED_Update();
         prev = z;
     }
