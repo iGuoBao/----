@@ -10,7 +10,7 @@
 #define LOW_SPEED_LAST_MORE 150
 
 // turn pid mpu6050_pid_reset(1.80, 0.5f, 0.2f, 50, 3000);
-#define MPU6050_TURN_P              1.80
+#define MPU6050_TURN_P              1.80f
 #define MPU6050_TURN_I              0.5f
 #define MPU6050_TURN_D              0.2f
 #define MPU6050_TURN_MAX_OUTPUT     50
