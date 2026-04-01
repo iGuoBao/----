@@ -21,7 +21,7 @@ void turn_angle(float angle)
     //    {
     //        mpu6050_pid_control(0, target_angle);
     //    }
-    mpu6050_pid_reset(1.80, 0.5f, 0.2f, 50, 3000);
+    mpu6050_pid_reset(MPU6050_TURN_P, MPU6050_TURN_I, MPU6050_TURN_D, MPU6050_TURN_MAX_OUTPUT, MPU6050_TURN_MAX_INTEGRAL);
 
     // float radian = 0;
 
@@ -154,17 +154,25 @@ void forward(int data)
         if (data * 2 - 1 == flag)
             break;
 
-        if (data == 1 || data == 2)
+        if (data == 1)
         {
-            speed = 80;
+            speed = LOW_SPEED_LAST_1;
+        }
+        else if (data == 2)
+        {
+            speed = LOW_SPEED_LAST_2;
+        }
+        else if (data == 3)
+        {
+            speed = LOW_SPEED_LAST_3;
         }
         else if (flag / 2 + 1 >= data * 0.85)
         {
-            speed = 80;
+            speed = LOW_SPEED_LAST_MORE;
         }
         else
         {
-            speed = 80; // 200
+            speed = LOW_SPEED_LAST_MORE;
         }
 
         if (back_flag)

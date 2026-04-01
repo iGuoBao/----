@@ -217,6 +217,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // 显示grid
         sprintf(k, "Grid: %2d,%2d", pose.x_grid, pose.y_grid);
         OLED_ShowString(0, 32, k, OLED_8X16);
+        // 显示编码器速度 左右
+        sprintf(k, "L: %3d R: %3d", encoder_left_speed_mm_s, encoder_right_speed_mm_s);
+        OLED_ShowString(0, 48, k, OLED_8X16);
         OLED_Update();
         prev = z;
     }

@@ -104,10 +104,6 @@ void motor_pid_init()
     PID_Init(&motor_left, 3, 0.5f, 0.3f, 800, 400, 0.02f);
     PID_Init(&motor_right, 3, 0.5f, 0.3f, 800, 400, 0.02f);
 }
-void left_reset()
-{
-    PID_Init(&motor_left, 5.0f, 0.5f, 0.3f, 800, 400, 0.02f);
-}
 
 void motor_pid_control(int set_left, int set_right)
 {
@@ -254,9 +250,6 @@ void mpu6050_turn_angle(float target, uint8_t way)
 {
     float error = Normalization(target - z_data);
     data_1 = (int)PID_Update(&mpu6050_pid, 0, -error);
-    // error_calculate();
-    // if (fabsf(error) < 5)
-        // motor_pid_init();
     if (data_1 > 0)
     {
 

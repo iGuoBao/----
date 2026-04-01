@@ -23,7 +23,6 @@ void PID_Init(PIDController* pid, float Kp, float Ki, float Kd,
              float output_lim, float integ_lim, float filter_coef);
 void motor_pid_init(void);
 void motor_pid_control(int set_left,int set_right);
-void left_reset();
 void mpu6050_turn_angle(float target,uint8_t way);
 void motor_speed_set(int set_left, int set_right);
 void mpu6050_turn_angle_oneway(float target,int Direction);
