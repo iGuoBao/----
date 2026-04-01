@@ -216,7 +216,7 @@ void forward_slow()
 void wait()
 {
     motor_speed_set(0, 0);
-    delay_20ms(50);
+    delay_20ms(30);
 }
 
 void back(int len)
@@ -284,7 +284,7 @@ void route(char Road[50])
             turn_around();
             break;
         case 'T':
-            Servos_up(3);
+            Servos_up(2);
             break;
         case 't':
             Servos_up(1);
@@ -293,7 +293,7 @@ void route(char Road[50])
             Servos_down(1); // 0004
             break;
         case 'D':
-            Servos_down(3); // 0004
+            Servos_down(2); // 0004
             break;
         case 'H':
             Servos_close(1800);
@@ -333,6 +333,8 @@ void route(char Road[50])
             break;
         case 'x':
             z_data = Normalization(z_data-5);
+        case 'y':
+            z_data = Normalization(z_data+5);
         default:
             break;
         }
