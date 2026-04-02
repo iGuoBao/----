@@ -25,6 +25,7 @@
 #include "gpio.h"
 
 #include "button.h"
+#include "astar.h"
 
 // /* Private includes ----------------------------------------------------------*/
 // /* USER CODE BEGIN Includes */
@@ -134,6 +135,8 @@ int main(void)
     OLED_Clear();
     motor_speed_set(0, 0);
 
+    AStar_Init();
+
     // static char te1[100] = {'f','S'};
     // static char te1[100] ={
     //     // manfen
@@ -189,14 +192,28 @@ int main(void)
     // 	static char test3[100]={'3','R','O','4','H','T','R','f','f','f','O','b','A','D',
     // 													'1','L','2','L','O','2','K','b','A','2','t','1','f','d','S','\0'};
     while (1)
-
     {
         if (Button_IsPressed(BUTTON_PC0))
         // if(1)
         {
-            route(test5);
+            Path_t test_path;
+            PathPoint_t start = {100, 1900}; // 起点坐标 (1,1) 转换为毫米
+            PathPoint_t goal = {1600, 3600};  // 终点
+            uint8_t result = AStar_FindPath(start, goal, &test_path);
+            char buffer[300];
+            sprintf(buffer, "A* Pathfinding Result: %s\r\n", result ? "Success" : "Failure");
+            HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
+
+            // HAL 串口1发出path结果
+            for (uint16_t i = 0; i < test_path.point_count; i++)
+            {
+                sprintf(buffer, "Point %d: (%d, %d)\r\n", i, test_path.points[i].x_mm, test_path.points[i].y_mm);
+                HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
+            }
+            // route(test5);
             // route(test_s);
         }
+        delay_20ms(10);
     }
 }
 

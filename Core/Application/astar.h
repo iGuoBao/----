@@ -21,6 +21,8 @@
 #define ASTAR_MAP_WIDTH_MM  GLOBAL_MAP_X_MM      // 场地大小mm
 #define ASTAR_MAP_HEIGHT_MM GLOBAL_MAP_Y_MM      // 场地大小mm
 
+#define MAX_PATH_POINTS 256  // 路径点最大数量
+
 // 计算格子尺寸
 #define ASTAR_GRID_SIZE_X_MM  (ASTAR_MAP_WIDTH_MM / ASTAR_MAP_WIDTH)    
 #define ASTAR_GRID_SIZE_Y_MM  (ASTAR_MAP_HEIGHT_MM / ASTAR_MAP_HEIGHT)  
@@ -60,7 +62,7 @@ typedef struct {
     uint16_t current_index;                 // 当前追踪的路径点索引（改为uint16_t）
     uint8_t is_valid;                       // 路径是否有效 (0=无效, 1=有效)
     uint8_t is_finished;                    // 路径是否完成 (0=未完成, 1=完成)
-    PathPoint_t points[100];    // 路径点数组
+    PathPoint_t points[MAX_PATH_POINTS];    // 路径点数组
 } Path_t;
 
 /* ==================== 网格点结构 ==================== */

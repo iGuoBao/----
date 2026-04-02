@@ -547,7 +547,7 @@ void AStar_ResetToInitialObstacles(void)
 {
     AStar_ClearObstacles();
     AStar_SetStaticObstacles();
-    AStar_ApplyWallPenalty();
+    // AStar_ApplyWallPenalty();
 }
 
 /**
