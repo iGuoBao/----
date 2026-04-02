@@ -57,6 +57,7 @@ extern "C" {
 #include "action.h"
 #include "port.h"
 #include "ringbuffer.h"
+#include "car_type.h"
 
 
 #define u8 uint8_t
