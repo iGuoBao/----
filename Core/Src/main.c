@@ -148,7 +148,7 @@ int main(void)
     //     'b','w','L','L','w','1','L','2','L','1','K','L','L','w','1','R','2','R','1','O',
     // 'S','\0'}; //第一轮重启
 
-    static char test_s[100] = {'t', 'w', 'd', 'T', 'w', 'D', 'S'}; // 测试用
+    static char test_s[100] = {'T', 'w', 'w', 'D', 'w', 'w', 'w','w','T', 'S'}; // 测试用
     // static char test_s[100] = {'d','t','D','T'}; //测试用
     static char te1[100] = {
         // manfen
@@ -192,8 +192,10 @@ int main(void)
 
     {
         if (Button_IsPressed(BUTTON_PC0))
+        // if(1)
         {
             route(test5);
+            // route(test_s);
         }
     }
 }

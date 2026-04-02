@@ -292,7 +292,7 @@ void route(char Road[50])
             turn_around();
             break;
         case 'T':
-            Servos_up(2);
+            Servos_up(1);
             break;
         case 't':
             Servos_up(1);
@@ -301,7 +301,7 @@ void route(char Road[50])
             Servos_down(1); // 0004
             break;
         case 'D':
-            Servos_down(2); // 0004
+            Servos_down(1); // 0004
             break;
         case 'H':
             Servos_close(1800);
