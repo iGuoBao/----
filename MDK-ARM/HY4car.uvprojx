@@ -10,6 +10,7 @@
       <TargetName>HY4car</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pArmCC>5060960::V5.06 update 7 (build 960)::.\ARM506</pArmCC>
       <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM506</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
@@ -314,7 +315,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>3</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
