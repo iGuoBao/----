@@ -682,6 +682,14 @@ void AStar_SetEdgeBlockedTo(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint
 
 static void AStar_SetStaticObstacles(void)
 {  
-    // 示例：如果需要设置动态障碍物（如其他小车），可以这样添加：
-    // AStar_SetObstacle(grid_x, grid_y);
+    // 赛道标准ros 坐标系：X轴向前，Y轴向左 地图右下角是0,0
+    // 示例 例如己方满仓环位置是2,5 己方三分区4，9
+    // 单边封锁
+    // 示例 AStar_SetEdgeBlockedTo(10, 10, 11, 10, 1);
+     // 封锁 (10,10) 到 (11,10) 的单边通行 第五个形参1就是阻止
+    // 启动坡道右侧
+    AStar_SetEdgeBlockedTo(1, 4, 2, 4, 1);
+    AStar_SetEdgeBlockedTo(2, 4, 1, 4, 1);
+    AStar_SetEdgeBlockedTo(2, 4, 3, 4, 1);
+    AStar_SetEdgeBlockedTo(3, 4, 2, 4, 1);
 }
