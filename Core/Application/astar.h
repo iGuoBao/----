@@ -6,17 +6,13 @@
  * @iGuoBao
  * @date    2025.10.21
  * @note    A* 路径规划算法 - 独立模块
- *          - 32x32 网格地图（约94mm/格子）优化RAM占用
- *          - 输出路径为实际坐标 x_mm, y_mm
- *          - 不修改其他模块，完全独立
- * @note    使用说明
- *          - RAM占用：约15KB（32×32优化版）
  */
 
 #include "main.h"
 #include <stdint.h>
-#include "PathTracking.h"      // 使用 Path_t 和 PathPoint_t
 #include "GlobalLocalization.h" // 使用 GlobalPose_t 和地图配置
+
+// #define ASTAR_DEBUG
 
 /* ==================== 地图配置 ==================== */
 // 使用 GlobalLocalization.h 中定义的地图参数
@@ -29,6 +25,16 @@
 #define ASTAR_GRID_SIZE_X_MM  (ASTAR_MAP_WIDTH_MM / ASTAR_MAP_WIDTH)    
 #define ASTAR_GRID_SIZE_Y_MM  (ASTAR_MAP_HEIGHT_MM / ASTAR_MAP_HEIGHT)  
 
+/* ==================== 方向定义（对应 astar.c s_directions 索引） */
+#define ASTAR_DIR_X_PLUS   0    // (1, 0)
+#define ASTAR_DIR_Y_PLUS   1    // (0, 1)
+#define ASTAR_DIR_X_MINUS  2    // (-1, 0)
+#define ASTAR_DIR_Y_MINUS  3    // (0, -1)
+#define ASTAR_DIR_XY_PLUS  4    // (1, 1)
+#define ASTAR_DIR_XY_MINUS 5    // (1, -1)
+#define ASTAR_DIR_NXY_MINUS 6   // (-1, -1)
+#define ASTAR_DIR_NXY_PLUS 7    // (-1, 1)
+
 /* ==================== 代价定义 ==================== */
 #define ASTAR_COST_STRAIGHT  10.0f    // 直线移动代价
 #define ASTAR_COST_DIAGONAL  14.0f    // 对角线移动代价 (√2 ≈ 1.414)
@@ -40,6 +46,22 @@
 #define ASTAR_WALL_PENALTY_BASE     60      // 第1层基础惩罚（靠障碍物最近）
 #define ASTAR_WALL_PENALTY_DECAY    0.5f    // 每层递减系数（0.5表示每层减半）
 
+/* ==================== 路径点结构 ==================== */
+// 单个路径点 4字节
+typedef struct {
+    int16_t x_mm;               // X坐标(毫米) 
+    int16_t y_mm;               // Y坐标(毫米) 
+} PathPoint_t; // 4字节
+
+/* ==================== 路径结构 ==================== */
+// 路径结构体
+typedef struct {
+    uint16_t point_count;                   // 路径点数量（改为uint16_t，支持最多65535个点）
+    uint16_t current_index;                 // 当前追踪的路径点索引（改为uint16_t）
+    uint8_t is_valid;                       // 路径是否有效 (0=无效, 1=有效)
+    uint8_t is_finished;                    // 路径是否完成 (0=未完成, 1=完成)
+    PathPoint_t points[100];    // 路径点数组
+} Path_t;
 
 /* ==================== 网格点结构 ==================== */
 typedef struct {
@@ -162,6 +184,25 @@ void AStar_PrintMap(void);
  *        2. 再调用固定好的障碍物设置函数
  */
 void AStar_ResetToInitialObstacles(void);
+
+/**
+ * @brief 设置单向边阻断
+ * @param grid_x 起点格子X
+ * @param grid_y 起点格子Y
+ * @param direction 方向编码 ASTAR_DIR_*
+ * @param blocked 1=禁止从该点朝该方向移动, 0=允许
+ */
+void AStar_SetEdgeBlocked(int16_t grid_x, int16_t grid_y, uint8_t direction, uint8_t blocked);
+
+/**
+ * @brief 设置从一个节点到另一个节点的边阻断（自动推断方向）
+ * @param x1 起点X
+ * @param y1 起点Y
+ * @param x2 终点X
+ * @param y2 终点Y
+ * @param blocked 1=禁止该转移, 0=允许
+ */
+void AStar_SetEdgeBlockedTo(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t blocked);
 
 /**
  * @brief 应用墙体惩罚（多层递减惩罚机制）
