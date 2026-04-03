@@ -16,6 +16,14 @@ typedef enum {
     TRANSLATE_ROUTE_CMD_ERR_RULE_FULL
 } TranslateRouteCmd_Status_t;
 
+typedef enum {
+    TRANSLATE_ROUTE_INTENT_NONE = 0,        // 无特殊意图，正常行驶
+    TRANSLATE_ROUTE_INTENT_PICK_CUBE = 1,   // 拾取方块
+    TRANSLATE_ROUTE_INTENT_PICK_RING = 2,   // 拾取圆环
+    TRANSLATE_ROUTE_INTENT_PLACE_RING = 3,  // 放置圆环
+    TRANSLATE_ROUTE_INTENT_PLACE_CUBE = 4   // 放置方块
+} TranslateRouteCmd_Intent_t;
+
 /**
  * @brief 从当前定位位姿出发，生成到目标栅格的命令串。
  * @param goal_x 目标栅格 x
@@ -40,6 +48,27 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
                                                       int16_t goal_y,
                                                       char *out_cmd,
                                                       uint16_t out_cmd_size);
+
+/**
+ * @brief 从当前定位位姿出发，生成到目标栅格的命令串，并根据意图追加尾部动作。
+ */
+TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateToGoalWithIntent(int16_t goal_x,
+                                                                      int16_t goal_y,
+                                                                      TranslateRouteCmd_Intent_t intent,
+                                                                      char *out_cmd,
+                                                                      uint16_t out_cmd_size);
+
+/**
+ * @brief 从指定起点与航向出发，生成命令串，并根据意图追加尾部动作（便于离线测试）。
+ */
+TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateWithIntent(int16_t start_x,
+                                                                int16_t start_y,
+                                                                float start_yaw_deg,
+                                                                int16_t goal_x,
+                                                                int16_t goal_y,
+                                                                TranslateRouteCmd_Intent_t intent,
+                                                                char *out_cmd,
+                                                                uint16_t out_cmd_size);
 
 /**
  * @brief 添加特殊边的前进计数补偿。

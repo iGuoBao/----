@@ -202,7 +202,17 @@ int main(void)
             char path_cmd_test[100];
             sprintf(txt, "\r\nPath Command: 1\r\n");
             HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_Generate(1, 1, 0.0f, 1, 9, path_cmd_test, sizeof(path_cmd_test));
+            TranslateRouteCmd_GenerateWithIntent(1, 1, 0.0f, 4, 9, TRANSLATE_ROUTE_INTENT_PICK_RING, path_cmd_test, sizeof(path_cmd_test));
+            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
+            {
+                char c = path_cmd_test[i];
+                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
+            }
+            delay_20ms(50);
+
+            sprintf(txt, "\r\nPath Command: 2\r\n");
+            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
+            TranslateRouteCmd_GenerateWithIntent(1, 1, 0.0f, 4, 9, TRANSLATE_ROUTE_INTENT_PLACE_RING, path_cmd_test, sizeof(path_cmd_test));
             for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
             {
                 char c = path_cmd_test[i];

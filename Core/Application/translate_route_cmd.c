@@ -214,6 +214,43 @@ static TranslateRouteCmd_Status_t append_forward_units(char *out_cmd,
     return TRANSLATE_ROUTE_CMD_OK;
 }
 
+static TranslateRouteCmd_Status_t append_intent_tail(char *out_cmd,
+                                                     uint16_t out_cmd_size,
+                                                     uint16_t *out_len,
+                                                     TranslateRouteCmd_Intent_t intent)
+{
+    const char *tail = NULL;
+
+    switch (intent)
+    {
+    case TRANSLATE_ROUTE_INTENT_NONE:
+        return TRANSLATE_ROUTE_CMD_OK;
+    case TRANSLATE_ROUTE_INTENT_PICK_CUBE:
+    case TRANSLATE_ROUTE_INTENT_PICK_RING:
+        tail = "K";
+        break;
+    case TRANSLATE_ROUTE_INTENT_PLACE_RING:
+        tail = "tfObd";
+        break;
+    case TRANSLATE_ROUTE_INTENT_PLACE_CUBE:
+        tail = "O";
+        break;
+    default:
+        return TRANSLATE_ROUTE_CMD_ERR_PARAM;
+    }
+
+    for (uint16_t i = 0; tail[i] != '\0'; i++)
+    {
+        TranslateRouteCmd_Status_t status = append_char(out_cmd, out_cmd_size, out_len, tail[i]);
+        if (status != TRANSLATE_ROUTE_CMD_OK)
+        {
+            return status;
+        }
+    }
+
+    return TRANSLATE_ROUTE_CMD_OK;
+}
+
 static uint8_t get_edge_route_units(int16_t from_x,
                                     int16_t from_y,
                                     int16_t to_x,
@@ -441,6 +478,54 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateToGoal(int16_t goal_x,
                                       goal_y,
                                       out_cmd,
                                       out_cmd_size);
+}
+
+TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateWithIntent(int16_t start_x,
+                                                                int16_t start_y,
+                                                                float start_yaw_deg,
+                                                                int16_t goal_x,
+                                                                int16_t goal_y,
+                                                                TranslateRouteCmd_Intent_t intent,
+                                                                char *out_cmd,
+                                                                uint16_t out_cmd_size)
+{
+    TranslateRouteCmd_Status_t status = TranslateRouteCmd_Generate(start_x,
+                                                                   start_y,
+                                                                   start_yaw_deg,
+                                                                   goal_x,
+                                                                   goal_y,
+                                                                   out_cmd,
+                                                                   out_cmd_size);
+    uint16_t out_len;
+
+    if (status != TRANSLATE_ROUTE_CMD_OK)
+    {
+        return status;
+    }
+
+    out_len = (uint16_t)strlen(out_cmd);
+    return append_intent_tail(out_cmd, out_cmd_size, &out_len, intent);
+}
+
+TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateToGoalWithIntent(int16_t goal_x,
+                                                                      int16_t goal_y,
+                                                                      TranslateRouteCmd_Intent_t intent,
+                                                                      char *out_cmd,
+                                                                      uint16_t out_cmd_size)
+{
+    TranslateRouteCmd_Status_t status = TranslateRouteCmd_GenerateToGoal(goal_x,
+                                                                          goal_y,
+                                                                          out_cmd,
+                                                                          out_cmd_size);
+    uint16_t out_len;
+
+    if (status != TRANSLATE_ROUTE_CMD_OK)
+    {
+        return status;
+    }
+
+    out_len = (uint16_t)strlen(out_cmd);
+    return append_intent_tail(out_cmd, out_cmd_size, &out_len, intent);
 }
 
 const char *TranslateRouteCmd_StatusString(TranslateRouteCmd_Status_t status)
