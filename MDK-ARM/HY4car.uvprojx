@@ -767,6 +767,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Application\astar.c</FilePath>
             </File>
+            <File>
+              <FileName>translate_route_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Application\translate_route_cmd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
