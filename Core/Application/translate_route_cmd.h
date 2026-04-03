@@ -58,6 +58,13 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_AddEdgeRouteUnits(int16_t from_x,
                                                                uint8_t route_units);
 
 /**
+ * @brief 设置赛道的前进计数补偿规则
+ * @note
+ *   斜坡上有些没十字路口的，做标记
+ */
+void TranslateRouteCmd_SetSpecialEdgeRules(void);
+
+/**
  * @brief 清空所有特殊边补偿规则。
  */
 void TranslateRouteCmd_ClearEdgeRouteUnits(void);

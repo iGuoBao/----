@@ -138,6 +138,7 @@ int main(void)
     motor_speed_set(0, 0);
 
     AStar_Init();
+    TranslateRouteCmd_SetSpecialEdgeRules();
 
     // static char te1[100] = {'f','S'};
     // static char te1[100] ={
@@ -201,47 +202,6 @@ int main(void)
             char path_cmd_test[100];
             sprintf(txt, "\r\nPath Command: 1\r\n");
             HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_Generate(1, 1, 0.0f, 4, 9, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-
-            sprintf(txt, "\r\nPath Command: 2\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_Generate(1, 1, 90.0f, 4, 9, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-
-            sprintf(txt, "\r\nPath Command: 3\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_Generate(1, 1, 0.0f, 2, 9, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-
-            sprintf(txt, "\r\nPath Command: 4\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_Generate(1, 1, 0.0f, 1, 9, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-
-            sprintf(txt, "\r\nPath Command: 5\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_AddEdgeRouteUnits(1, 1, 1, 2, 0);
             TranslateRouteCmd_Generate(1, 1, 0.0f, 1, 9, path_cmd_test, sizeof(path_cmd_test));
             for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
             {

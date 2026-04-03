@@ -6,14 +6,16 @@
 #include <math.h>
 #include <string.h>
 
-typedef enum {
+typedef enum
+{
     HEADING_X_PLUS = 0,
     HEADING_Y_PLUS = 1,
     HEADING_X_MINUS = 2,
     HEADING_Y_MINUS = 3
 } Heading_t;
 
-typedef struct {
+typedef struct
+{
     int8_t from_x;
     int8_t from_y;
     int8_t to_x;
@@ -26,10 +28,12 @@ static SpecialEdgeRule_t s_special_edge_rules[TRANSLATE_ROUTE_CMD_MAX_SPECIAL_ED
 
 static float normalize_yaw(float deg)
 {
-    while (deg >= 180.0f) {
+    while (deg >= 180.0f)
+    {
         deg -= 360.0f;
     }
-    while (deg < -180.0f) {
+    while (deg < -180.0f)
+    {
         deg += 360.0f;
     }
     return deg;
@@ -47,10 +51,12 @@ static uint8_t is_valid_grid(int16_t x, int16_t y)
 
 static int16_t clamp_i16(int16_t value, int16_t min_value, int16_t max_value)
 {
-    if (value < min_value) {
+    if (value < min_value)
+    {
         return min_value;
     }
-    if (value > max_value) {
+    if (value > max_value)
+    {
         return max_value;
     }
     return value;
@@ -78,13 +84,16 @@ static uint8_t yaw_to_heading(float yaw_deg, Heading_t *heading)
     float min_diff = 1e9f;
     uint8_t min_index = 0;
 
-    if (heading == NULL) {
+    if (heading == NULL)
+    {
         return 0;
     }
 
-    for (uint8_t i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 4; i++)
+    {
         float diff = abs_angle_diff(yaw_deg, candidates[i]);
-        if (diff < min_diff) {
+        if (diff < min_diff)
+        {
             min_diff = diff;
             min_index = i;
         }
@@ -96,23 +105,28 @@ static uint8_t yaw_to_heading(float yaw_deg, Heading_t *heading)
 
 static uint8_t step_to_heading(int16_t dx, int16_t dy, Heading_t *heading)
 {
-    if (heading == NULL) {
+    if (heading == NULL)
+    {
         return 0;
     }
 
-    if (dx == 1 && dy == 0) {
+    if (dx == 1 && dy == 0)
+    {
         *heading = HEADING_X_PLUS;
         return 1;
     }
-    if (dx == 0 && dy == 1) {
+    if (dx == 0 && dy == 1)
+    {
         *heading = HEADING_Y_PLUS;
         return 1;
     }
-    if (dx == -1 && dy == 0) {
+    if (dx == -1 && dy == 0)
+    {
         *heading = HEADING_X_MINUS;
         return 1;
     }
-    if (dx == 0 && dy == -1) {
+    if (dx == 0 && dy == -1)
+    {
         *heading = HEADING_Y_MINUS;
         return 1;
     }
@@ -121,15 +135,17 @@ static uint8_t step_to_heading(int16_t dx, int16_t dy, Heading_t *heading)
 }
 
 static TranslateRouteCmd_Status_t append_char(char *out_cmd,
-                                               uint16_t out_cmd_size,
-                                               uint16_t *out_len,
-                                               char c)
+                                              uint16_t out_cmd_size,
+                                              uint16_t *out_len,
+                                              char c)
 {
-    if (out_cmd == NULL || out_len == NULL || out_cmd_size == 0) {
+    if (out_cmd == NULL || out_len == NULL || out_cmd_size == 0)
+    {
         return TRANSLATE_ROUTE_CMD_ERR_PARAM;
     }
 
-    if ((uint32_t)(*out_len) + 1U >= out_cmd_size) {
+    if ((uint32_t)(*out_len) + 1U >= out_cmd_size)
+    {
         return TRANSLATE_ROUTE_CMD_ERR_BUFFER;
     }
 
@@ -141,20 +157,23 @@ static TranslateRouteCmd_Status_t append_char(char *out_cmd,
 }
 
 static TranslateRouteCmd_Status_t append_turn_cmds(char *out_cmd,
-                                                    uint16_t out_cmd_size,
-                                                    uint16_t *out_len,
-                                                    Heading_t current,
-                                                    Heading_t target)
+                                                   uint16_t out_cmd_size,
+                                                   uint16_t *out_len,
+                                                   Heading_t current,
+                                                   Heading_t target)
 {
     uint8_t diff = (uint8_t)((target - current + 4) % 4);
 
-    if (diff == 0) {
+    if (diff == 0)
+    {
         return TRANSLATE_ROUTE_CMD_OK;
     }
-    if (diff == 1) {
+    if (diff == 1)
+    {
         return append_char(out_cmd, out_cmd_size, out_len, 'L');
     }
-    if (diff == 3) {
+    if (diff == 3)
+    {
         return append_char(out_cmd, out_cmd_size, out_len, 'R');
     }
 
@@ -162,27 +181,32 @@ static TranslateRouteCmd_Status_t append_turn_cmds(char *out_cmd,
 }
 
 static TranslateRouteCmd_Status_t append_forward_units(char *out_cmd,
-                                                        uint16_t out_cmd_size,
-                                                        uint16_t *out_len,
-                                                        uint16_t forward_units)
+                                                       uint16_t out_cmd_size,
+                                                       uint16_t *out_len,
+                                                       uint16_t forward_units)
 {
     TranslateRouteCmd_Status_t status;
 
-    if (forward_units == 0) {
+    if (forward_units == 0)
+    {
         return TRANSLATE_ROUTE_CMD_ERR_ZERO_FORWARD;
     }
 
-    while (forward_units >= 9) {
+    while (forward_units >= 9)
+    {
         status = append_char(out_cmd, out_cmd_size, out_len, '9');
-        if (status != TRANSLATE_ROUTE_CMD_OK) {
+        if (status != TRANSLATE_ROUTE_CMD_OK)
+        {
             return status;
         }
         forward_units -= 9;
     }
 
-    if (forward_units > 0) {
+    if (forward_units > 0)
+    {
         status = append_char(out_cmd, out_cmd_size, out_len, (char)('0' + forward_units));
-        if (status != TRANSLATE_ROUTE_CMD_OK) {
+        if (status != TRANSLATE_ROUTE_CMD_OK)
+        {
             return status;
         }
     }
@@ -195,21 +219,51 @@ static uint8_t get_edge_route_units(int16_t from_x,
                                     int16_t to_x,
                                     int16_t to_y)
 {
-    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++) {
+    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++)
+    {
         const SpecialEdgeRule_t *rule = &s_special_edge_rules[i];
-        if (!rule->in_use) {
+        if (!rule->in_use)
+        {
             continue;
         }
 
         if (rule->from_x == from_x &&
             rule->from_y == from_y &&
             rule->to_x == to_x &&
-            rule->to_y == to_y) {
+            rule->to_y == to_y)
+        {
             return rule->route_units;
         }
     }
 
     return 1;
+}
+
+void TranslateRouteCmd_SetSpecialEdgeRules(void)
+{
+    // 示例：设置 (1,1) -> (1,2) 的前进计数为 0（表示不计入 route 前进数）
+    // TranslateRouteCmd_AddEdgeRouteUnits(1, 1, 1, 2, 0);
+
+    // 己方斜坡左侧
+    TranslateRouteCmd_AddEdgeRouteUnits(1, 5, 1, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(1, 7, 1, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(2, 5, 2, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(2, 7, 2, 6, 0);
+    // 己方斜坡右侧
+    TranslateRouteCmd_AddEdgeRouteUnits(1, 5, 1, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(1, 3, 1, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(2, 5, 2, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(2, 3, 2, 4, 0);
+    // 对方斜坡左侧
+    TranslateRouteCmd_AddEdgeRouteUnits(6, 5, 6, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(6, 7, 6, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(7, 5, 7, 6, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(7, 7, 7, 6, 0);
+    // 对方斜坡右侧
+    TranslateRouteCmd_AddEdgeRouteUnits(6, 5, 6, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(6, 3, 6, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(7, 5, 7, 4, 0);
+    TranslateRouteCmd_AddEdgeRouteUnits(7, 3, 7, 4, 0);
 }
 
 void TranslateRouteCmd_ClearEdgeRouteUnits(void)
@@ -223,27 +277,32 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_AddEdgeRouteUnits(int16_t from_x,
                                                                int16_t to_y,
                                                                uint8_t route_units)
 {
-    if (!is_valid_grid(from_x, from_y) || !is_valid_grid(to_x, to_y)) {
+    if (!is_valid_grid(from_x, from_y) || !is_valid_grid(to_x, to_y))
+    {
         return TRANSLATE_ROUTE_CMD_ERR_PARAM;
     }
 
-    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++) {
+    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++)
+    {
         SpecialEdgeRule_t *rule = &s_special_edge_rules[i];
 
         if (rule->in_use &&
             rule->from_x == from_x &&
             rule->from_y == from_y &&
             rule->to_x == to_x &&
-            rule->to_y == to_y) {
+            rule->to_y == to_y)
+        {
             rule->route_units = route_units;
             return TRANSLATE_ROUTE_CMD_OK;
         }
     }
 
-    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++) {
+    for (uint8_t i = 0; i < TRANSLATE_ROUTE_CMD_MAX_SPECIAL_EDGES; i++)
+    {
         SpecialEdgeRule_t *rule = &s_special_edge_rules[i];
 
-        if (!rule->in_use) {
+        if (!rule->in_use)
+        {
             rule->from_x = (int8_t)from_x;
             rule->from_y = (int8_t)from_y;
             rule->to_x = (int8_t)to_x;
@@ -271,21 +330,25 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
     Heading_t current_heading;
     uint16_t out_len = 0;
 
-    if (out_cmd == NULL || out_cmd_size == 0) {
+    if (out_cmd == NULL || out_cmd_size == 0)
+    {
         return TRANSLATE_ROUTE_CMD_ERR_PARAM;
     }
 
     out_cmd[0] = '\0';
 
-    if (!is_valid_grid(start_x, start_y) || !is_valid_grid(goal_x, goal_y)) {
+    if (!is_valid_grid(start_x, start_y) || !is_valid_grid(goal_x, goal_y))
+    {
         return TRANSLATE_ROUTE_CMD_ERR_PARAM;
     }
 
-    if (!yaw_to_heading(start_yaw_deg, &current_heading)) {
+    if (!yaw_to_heading(start_yaw_deg, &current_heading))
+    {
         return TRANSLATE_ROUTE_CMD_ERR_YAW;
     }
 
-    if (start_x == goal_x && start_y == goal_y) {
+    if (start_x == goal_x && start_y == goal_y)
+    {
         return TRANSLATE_ROUTE_CMD_OK;
     }
 
@@ -294,16 +357,19 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
     goal.x = (int8_t)goal_x;
     goal.y = (int8_t)goal_y;
 
-    if (!AStar_FindPath(start, goal, &path) || !path.is_valid || path.point_count < 2) {
+    if (!AStar_FindPath(start, goal, &path) || !path.is_valid || path.point_count < 2)
+    {
         return TRANSLATE_ROUTE_CMD_ERR_NO_PATH;
     }
 
     uint16_t i = 1;
-    while (i < path.point_count) {
+    while (i < path.point_count)
+    {
         TranslateRouteCmd_Status_t status;
         Heading_t segment_heading;
 
-        while (i < path.point_count) {
+        while (i < path.point_count)
+        {
             int16_t from_x = mm_to_grid_x(path.points[i - 1].x_mm);
             int16_t from_y = mm_to_grid_y(path.points[i - 1].y_mm);
             int16_t to_x = mm_to_grid_x(path.points[i].x_mm);
@@ -311,21 +377,24 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
             int16_t dx = (int16_t)(to_x - from_x);
             int16_t dy = (int16_t)(to_y - from_y);
 
-            if (!step_to_heading(dx, dy, &segment_heading)) {
+            if (!step_to_heading(dx, dy, &segment_heading))
+            {
                 return TRANSLATE_ROUTE_CMD_ERR_STEP;
             }
             break;
         }
 
         status = append_turn_cmds(out_cmd, out_cmd_size, &out_len, current_heading, segment_heading);
-        if (status != TRANSLATE_ROUTE_CMD_OK) {
+        if (status != TRANSLATE_ROUTE_CMD_OK)
+        {
             return status;
         }
 
         current_heading = segment_heading;
 
         uint16_t forward_units = 0;
-        while (i < path.point_count) {
+        while (i < path.point_count)
+        {
             Heading_t this_heading;
             int16_t from_x = mm_to_grid_x(path.points[i - 1].x_mm);
             int16_t from_y = mm_to_grid_y(path.points[i - 1].y_mm);
@@ -334,11 +403,13 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
             int16_t dx = (int16_t)(to_x - from_x);
             int16_t dy = (int16_t)(to_y - from_y);
 
-            if (!step_to_heading(dx, dy, &this_heading)) {
+            if (!step_to_heading(dx, dy, &this_heading))
+            {
                 return TRANSLATE_ROUTE_CMD_ERR_STEP;
             }
 
-            if (this_heading != segment_heading) {
+            if (this_heading != segment_heading)
+            {
                 break;
             }
 
@@ -347,7 +418,8 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_Generate(int16_t start_x,
         }
 
         status = append_forward_units(out_cmd, out_cmd_size, &out_len, forward_units);
-        if (status != TRANSLATE_ROUTE_CMD_OK) {
+        if (status != TRANSLATE_ROUTE_CMD_OK)
+        {
             return status;
         }
     }
@@ -373,7 +445,8 @@ TranslateRouteCmd_Status_t TranslateRouteCmd_GenerateToGoal(int16_t goal_x,
 
 const char *TranslateRouteCmd_StatusString(TranslateRouteCmd_Status_t status)
 {
-    switch (status) {
+    switch (status)
+    {
     case TRANSLATE_ROUTE_CMD_OK:
         return "OK";
     case TRANSLATE_ROUTE_CMD_ERR_PARAM:
