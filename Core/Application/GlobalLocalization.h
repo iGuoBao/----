@@ -68,16 +68,4 @@ GlobalPose_t GlobalLoc_GetPose(void);
 // 获取当前异常情况
 uint8_t GlobalLoc_GetException(void);
 
-// 十字路口信息（sensor 7路全白且已对齐）
-bool GlobalLoc_IsCrossroad(void);
-int32_t GlobalLoc_GetCrossroadX(void);
-int32_t GlobalLoc_GetCrossroadY(void);
-
-// mm转grid
-void GlobalLoc_mmToGrid(int32_t x_mm, int32_t y_mm, int32_t *x_grid, int32_t *y_grid);
-
-// grid转mm
-void GlobalLoc_GridToMm(int32_t x_grid, int32_t y_grid, int32_t *x_mm, int32_t *y_mm);
-
-
 #endif // GLOBAL_LOCALIZATION_H

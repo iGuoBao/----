@@ -181,21 +181,6 @@ void GlobalLoc_Periodic(void)
     // END 更新s_pose
 }
 
-bool GlobalLoc_IsCrossroad(void)
-{
-    return s_crossroad_active;
-}
-
-int32_t GlobalLoc_GetCrossroadX(void)
-{
-    return s_crossroad_x_mm;
-}
-
-int32_t GlobalLoc_GetCrossroadY(void)
-{
-    return s_crossroad_y_mm;
-}
-
 GlobalPose_t GlobalLoc_GetPose(void)
 {
     return s_pose;
