@@ -191,14 +191,35 @@ int main(void)
     // 		////第二轮，前车，爪车1,去优先3分区，一个三分一个两分
     // 	static char test3[100]={'3','R','O','4','H','T','R','f','f','f','O','b','A','D',
     // 													'1','L','2','L','O','2','K','b','A','2','t','1','f','d','S','\0'};
+    
+    
+            if(1)
+        {   
+            Path_t test_path;
+            AStar_GridPoint_t start = {1, 8};
+            AStar_GridPoint_t goal = {4, 2};
+            uint8_t result = AStar_FindPath(start, goal, &test_path);
+            char buffer[300];
+            sprintf(buffer, "A* Pathfinding Result: %s\r\n", result ? "Success" : "Failure");
+            HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
+
+            // HAL 串口1发出path结果
+            for (uint16_t i = 0; i < test_path.point_count; i++)
+            {
+                sprintf(buffer, "Point %d: (%d, %d)\r\n", i, test_path.points[i].x_mm, test_path.points[i].y_mm);
+                HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
+            }
+            // route(test5);
+            // route(test_s);
+        }
     while (1)
     {
         if (Button_IsPressed(BUTTON_PC0))
         // if(1)
-        {
+        {   
             Path_t test_path;
-            PathPoint_t start = {100, 1900}; // 起点坐标 (1,1) 转换为毫米
-            PathPoint_t goal = {1600, 3600};  // 终点
+            AStar_GridPoint_t start = {1, 1}; // 起点网格坐标 (1,1)
+            AStar_GridPoint_t goal = {4, 9};  // 终点网格坐标 (4,9)
             uint8_t result = AStar_FindPath(start, goal, &test_path);
             char buffer[300];
             sprintf(buffer, "A* Pathfinding Result: %s\r\n", result ? "Success" : "Failure");

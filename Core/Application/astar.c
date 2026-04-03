@@ -231,18 +231,20 @@ void AStar_ClearMap(void)
 
 /**
  * @brief A* 路径搜索核心函数
- * @return 1=成功找到路径,  0=失败
+ * @param start_grid 起点网格坐标
+ * @param goal_grid 终点网格坐标
+ * @param path 输出路径指针（路径点为mm单位）
+ * @return 1=成功找到路径, 0=失败
  */
-uint8_t AStar_FindPath(PathPoint_t start_mm, PathPoint_t goal_mm, Path_t *path)
+uint8_t AStar_FindPath(AStar_GridPoint_t start_grid, AStar_GridPoint_t goal_grid, Path_t *path)
 {
     if (path == NULL || !s_map.is_initialized) {
         return 0;
     }
     
-    // 转换为网格坐标
-    AStar_GridPoint_t start, goal;
-    world_to_grid(start_mm, &start);
-    world_to_grid(goal_mm, &goal);
+    // 直接使用传入的网格坐标
+    AStar_GridPoint_t start = start_grid;
+    AStar_GridPoint_t goal = goal_grid;
     
     // 检查起点和终点是否有效
     // 会是潜在隐患，未来可能有小车进入从而被比较为障碍物 然后小车因为被判断在障碍物里而直接return 0
@@ -482,15 +484,13 @@ static void reconstruct_path(AStar_GridPoint_t start, AStar_GridPoint_t goal, Pa
 
 /**
  * @brief 网格坐标转世界坐标
- * @note 转换到格子中心点
+ * @note 转换到十字路口位置（棋盘格子交叉点）
  */
 static void grid_to_world(AStar_GridPoint_t grid, PathPoint_t *world)
 {
-    // 更精确的计算，转换为int16_t
-    world->x_mm = (int16_t)((grid.x * ASTAR_MAP_WIDTH_MM) / ASTAR_MAP_WIDTH + 
-                             ASTAR_MAP_WIDTH_MM / (2 * ASTAR_MAP_WIDTH));
-    world->y_mm = (int16_t)((grid.y * ASTAR_MAP_HEIGHT_MM) / ASTAR_MAP_HEIGHT + 
-                             ASTAR_MAP_HEIGHT_MM / (2 * ASTAR_MAP_HEIGHT));
+    // 棋盘格子场景：路径点应在十字路口（400mm整数倍位置）
+    world->x_mm = (int16_t)(grid.x * ASTAR_GRID_SIZE_X_MM);
+    world->y_mm = (int16_t)(grid.y * ASTAR_GRID_SIZE_Y_MM);
 }
 
 /**

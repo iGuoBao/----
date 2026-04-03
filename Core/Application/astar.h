@@ -156,13 +156,13 @@ void AStar_ClearMap(void);
 
 /**
  * @brief A* 路径搜索（核心函数）
- * @param start_mm 起点世界坐标 (mm)
- * @param goal_mm 终点世界坐标 (mm)
- * @param path 输出路径指针
+ * @param start_grid 起点网格坐标
+ * @param goal_grid 终点网格坐标
+ * @param path 输出路径指针（路径点为mm单位）
  * @return 1=成功找到路径, 0=失败
  * @note 输出的路径已经是世界坐标(mm)，可直接用于路径追踪
  */
-uint8_t AStar_FindPath(PathPoint_t start_mm, PathPoint_t goal_mm, Path_t *path);
+uint8_t AStar_FindPath(AStar_GridPoint_t start_grid, AStar_GridPoint_t goal_grid, Path_t *path);
 
 /**
  * @brief 获取地图指针（调试用）
