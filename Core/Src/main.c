@@ -24,27 +24,20 @@
 #include "usart.h"
 #include "gpio.h"
 
-#include "button.h"
-#include "astar.h"
-#include "translate_route_cmd.h"
 
 
 // /* Private includes ----------------------------------------------------------*/
 // /* USER CODE BEGIN Includes */
+#include "imu901.h"
+#include "button.h"
+#include "astar.h"
+#include "translate_route_cmd.h"
 // /* USER CODE END Includes */
 // /* Private typedef -----------------------------------------------------------*/
 // /* USER CODE BEGIN PTD */
 // /* USER CODE END PTD */
 // /* Private define ------------------------------------------------------------*/
 // /* USER CODE BEGIN PD */
-void uint8_to_binary(uint8_t num, char *buffer)
-{
-    for (int i = 7; i >= 0; i--)
-    {
-        buffer[7 - i] = (num >> i) & 1 ? '1' : '0'; // 从最高位到最低位依次提取
-    }
-    buffer[8] = '\0'; // 字符串结束符
-}
 // /* USER CODE END PD */
 // /* Private macro -------------------------------------------------------------*/
 // /* USER CODE BEGIN PM */
@@ -115,16 +108,10 @@ int main(void)
     MX_TIM8_Init();
     MX_TIM6_Init();
     MX_I2C1_Init();
-    /* USER CODE BEGIN 2 */
-    // Delay_ms(1000);
-    // Encoder_Init();
-    //  HAL_UART_Transmit(&huart2,seven_commend,4,0xffff);
 
     OLED_Init();
+    imu901_init();
 
-    HAL_Delay(500);
-    uint8_t res = mpu_dmp_init();
-    HAL_Delay(200);
     OLED_Update();
     Encoder_Init();
     sevenway_init();
@@ -132,11 +119,10 @@ int main(void)
 
     motor_pid_init();
     seven_line_pid_init();
-    mpu6050_pid_init();
-    mpu6050_sevenway_init();
     OLED_Clear();
     motor_speed_set(0, 0);
 
+    GlobalLoc_Init();
     AStar_Init();
     TranslateRouteCmd_SetSpecialEdgeRules();
 

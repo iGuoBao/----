@@ -162,8 +162,6 @@ void seven_line_pid_control(int speed)
     left = speed + data;
     right = speed - data;
     motor_pid_control(left, right);
-    // sprintf(k1, "%d %d %x ", left, right, seven_ff);
-    OLED_ShowString(0, 31, k1, OLED_8X16);
 #endif
 }
 PIDController length_pid;
@@ -199,31 +197,6 @@ void length_control(int left, int right)
 
 PIDController mpu6050_pid;
 
-void mpu6050_pid_init()
-{
-    int i = 0;
-    float data = 0;
-    PID_Init(&mpu6050_pid, 2, 0.01, 0.02f, 200, 3000, 0.02f);
-    // PID_Init(&mpu6050_pid, 0.5, 0.00, 0.25, 1000, 3000, 0.02f);
-    x_data = 0;
-    y_data = 0;
-    z_data = 0;
-    while (1)
-    {
-        if (receive_flag)
-        {
-
-            while (!mpu_dmp_get_data(&x_data, &y_data, &z_data))
-                ;
-            data += z_data;
-            receive_flag = 0;
-            i++;
-        }
-        if (i > 10)
-            break;
-    }
-    target_angle = data / 10;
-}
 void mpu6050_pid_control(int speed, float target)
 {
 

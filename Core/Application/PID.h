@@ -30,7 +30,6 @@ void seven_line_pid_init(void);
 void seven_line_pid_control(int speed);
 void length_pid_init(void);
 void length_control(int left,int right);
-void mpu6050_pid_init(void);
 void mpu6050_pid_control(int speed,float target);
 void target_angle_set(float data);
 void mpu6050_sevenway_init(void);
