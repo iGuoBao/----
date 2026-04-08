@@ -338,10 +338,10 @@ void route(char Road[50])
             // motor_speed_set(45, 45);
             // delay_20ms(70);
             // motor_speed_set(0, 0);
-            forward_delay(50, 60);
+            forward_delay(50, 40);
             break;
         case 'b':
-            forward_delay(-50, 60);
+            forward_delay(50, -40);
             break;
         case 'B':
             // back(600);
@@ -360,10 +360,6 @@ void route(char Road[50])
                 mpu6050_pid_control(0, target_angle);
             }
             break;
-        case 'x':
-            z_data = Normalization(z_data-5);
-        case 'y':
-            z_data = Normalization(z_data+5);
         default:
             break;
         }
