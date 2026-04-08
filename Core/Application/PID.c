@@ -296,6 +296,7 @@ static float delta = 0;
 static float data__l;
 static float target;
 static float prev_sevenway = 0.0f;
+static uint32_t mpu6050_ctrl_tick20ms = 0;
 // Ѳ�߿��ƺ�����20ms���ڵ��ã�
 void mpu6050_sevenway_control(int speed)
 {
@@ -333,12 +334,14 @@ void mpu6050_sevenway_control(int speed)
     // mpu6050_pid_control(speed, target);
     if (receive_flag)
     {
+        mpu6050_ctrl_tick20ms++;
         receive_flag = 0;
         mpu6050_pid_control(speed, target);
     }
 #else
     if (receive_flag)
     {
+        mpu6050_ctrl_tick20ms++;
         receive_flag = 0;
         error_calculate();
         delta = 0.05 * sevenway_data + 0.95 * delta;
@@ -347,6 +350,16 @@ void mpu6050_sevenway_control(int speed)
     }
     mpu6050_pid_control(speed, target_angle);
 #endif
+}
+
+uint32_t mpu6050_get_ctrl_tick20ms(void)
+{
+    return mpu6050_ctrl_tick20ms;
+}
+
+void mpu6050_reset_ctrl_tick20ms(void)
+{
+    mpu6050_ctrl_tick20ms = 0;
 }
 
 #define HISTORY_SIZE 128                    // ��ʷ���ݻ�������С������Ļ����һ�£�

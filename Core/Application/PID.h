@@ -34,6 +34,8 @@ void mpu6050_pid_control(int speed,float target);
 void target_angle_set(float data);
 void mpu6050_sevenway_init(void);
 void mpu6050_sevenway_control(int speed);
+uint32_t mpu6050_get_ctrl_tick20ms(void);
+void mpu6050_reset_ctrl_tick20ms(void);
 float Normalization(float data);
 void OLED_ShowDynamicData(int16_t target, int16_t deviation) ;
 float Normalization(float data);

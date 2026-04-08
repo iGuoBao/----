@@ -199,6 +199,28 @@ void forward(int data)
     motor_speed_set(0, 0);
 }
 
+void forward_delay(int delay_20ms, int speed)
+{
+    uint32_t start_tick = 0;
+
+    if (delay_20ms <= 0)
+    {
+        motor_pid_init();
+        motor_speed_set(0, 0);
+        return;
+    }
+
+    start_tick = mpu6050_get_ctrl_tick20ms();
+
+    while ((uint32_t)(mpu6050_get_ctrl_tick20ms() - start_tick) < (uint32_t)delay_20ms)
+    {
+        mpu6050_sevenway_control(speed);
+    }
+
+    motor_pid_init();
+    motor_speed_set(0, 0);
+}
+
 void forward_begin()
 {
     uint32_t t1 = 0;
@@ -313,14 +335,13 @@ void route(char Road[50])
             Servos_open(1250);
             break;
         case 'f':
-            motor_speed_set(45, 45);
-            delay_20ms(70);
-            motor_speed_set(0, 0);
+            // motor_speed_set(45, 45);
+            // delay_20ms(70);
+            // motor_speed_set(0, 0);
+            forward_delay(50, 60);
             break;
         case 'b':
-            motor_speed_set(-70, -70);
-            delay_20ms(25);
-            motor_speed_set(0, 0);
+            forward_delay(-50, 60);
             break;
         case 'B':
             // back(600);
