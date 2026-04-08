@@ -204,7 +204,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             receive_flag = 1;
 
         static uint16_t oled_flag = 0;
-        if (oled_flag++ < 20)
+        if (oled_flag++ < 25)
             return;
         char k[40] = "";
         oled_flag = 0;

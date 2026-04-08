@@ -83,7 +83,8 @@ void GlobalLoc_Periodic(void)
     // mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
     _pitch = attitude.pitch;
     _roll  = attitude.roll;
-    _yaw   = normalize_yaw(attitude.yaw - s_pose.abs_yaw); // 转为相对航向
+    // _yaw   = normalize_yaw(attitude.yaw - s_pose.abs_yaw); // 转为相对航向
+    _yaw = attitude.yaw;
 
     // END 计算小车角度yaw
     
@@ -102,17 +103,16 @@ void GlobalLoc_Periodic(void)
     // END   处理七路传感器数据
 
     // START 更新s_pose
-    float current_mpu_yaw = normalize_yaw(_yaw);
-    float yaw_diff = normalize_yaw(current_mpu_yaw - s_last_mpu_yaw);
+    // float current_mpu_yaw = normalize_yaw(_yaw);
+    // float yaw_diff = normalize_yaw(current_mpu_yaw - s_last_mpu_yaw);
 
-    if (fabsf(yaw_diff) >= YAW_UPDATE_THRESHOLD_DEG) {
-        // 只有当变化足够大时才更新 yaw，抛弃噪声抖动
-        s_pose.yaw = normalize_yaw(s_pose.yaw + yaw_diff);
-        s_last_mpu_yaw = current_mpu_yaw;
-    }
+    // if (fabsf(yaw_diff) >= YAW_UPDATE_THRESHOLD_DEG) {
+    //     // 只有当变化足够大时才更新 yaw，抛弃噪声抖动
+    //     s_pose.yaw = normalize_yaw(s_pose.yaw + yaw_diff);
+    //     s_last_mpu_yaw = current_mpu_yaw;
+    // }
     // 若变化小于阈值，则保持上次 yaw 不变
 
-    // s_pose.abs_yaw = current_mpu_yaw;           // 绝对航向
     s_pose.yaw = _yaw;  // 直接使用当前计算的相对航向，忽略滤波（如果需要滤波可以改为上面注释的方式）
     s_pose.pitch = _pitch;
     s_pose.roll  = _roll;
