@@ -1,5 +1,5 @@
 #include "GlobalLocalization.h"
-#include "mpu.h"
+#include "imu901.h"
 #include "usart.h"
 #include <string.h>
 #include <math.h>
@@ -12,7 +12,7 @@ extern UART_HandleTypeDef huart1;
 static GlobalPose_t s_pose;
 
 // Yaw 更新阈值（20ms周期）：变化小于此值忽略
-#define YAW_UPDATE_THRESHOLD_DEG  0.08f
+#define YAW_UPDATE_THRESHOLD_DEG  0.00f
 // 上一次采样的 MPU yaw（度）
 static float s_last_mpu_yaw = 0.0f;
 
@@ -43,18 +43,6 @@ void GlobalLoc_Init()
     s_pose.y_grid = GLOBAL_INIT_Y_GRID;
     s_pose.yaw = 0;
     s_pose.abs_yaw = GLOBAL_INIT_YAW_DEG;
-    
-    // 抛弃前5次读取数据
-    for (int i = 0; i < 5; i++){
-        mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
-        HAL_Delay(25);
-    }
-    // 多次读取以稳定
-    for (int i = 0; i < 10; i++){
-        mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
-        _yaw_sum += _yaw;
-        HAL_Delay(25);
-    }
     s_pose.yaw = GLOBAL_INIT_YAW_DEG;
 
     // 初始化 yaw 过滤器初值
@@ -92,7 +80,10 @@ void GlobalLoc_Periodic(void)
     float _yaw, _pitch, _roll;
 
     // START 计算小车角度yaw
-    mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
+    // mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
+    _pitch = attitude.pitch;
+    _roll  = attitude.roll;
+    _yaw   = attitude.yaw;
 
     // END 计算小车角度yaw
     
