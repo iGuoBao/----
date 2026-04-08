@@ -188,7 +188,7 @@ int main(void)
         {   
 
             // route(test5);
-            route(test_s);
+            route(test_s);//测试用
         }
         delay_20ms(10);
     }
