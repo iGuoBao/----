@@ -83,7 +83,7 @@ void Servos_open(int position) {
 
 void Servos_close(int position) {
     sprintf(k,"#001P%dT0500\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
 	delay_20ms(10);
 }
 

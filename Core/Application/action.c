@@ -338,17 +338,13 @@ void route(char Road[50])
             // motor_speed_set(45, 45);
             // delay_20ms(70);
             // motor_speed_set(0, 0);
-            forward_delay(50, 40);
+            forward_delay(75, 40);
             break;
         case 'b':
             forward_delay(50, -40);
             break;
         case 'B':
-            // back(600);
-            // forward(-1);
-            motor_speed_set(-70, -70);
-            delay_20ms(40);
-            motor_speed_set(0, 0);
+            forward_delay(85, -40);
             break;
         case 'w':
             wait();
