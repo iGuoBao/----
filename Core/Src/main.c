@@ -196,51 +196,13 @@ int main(void)
     // 													'1','L','2','L','O','2','K','b','A','2','t','1','f','d','S','\0'};
     
     
-        if(1)
-        {   
-            char txt[100];
-            char path_cmd_test[100];
-            sprintf(txt, "\r\nPath Command: 1\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_GenerateWithIntent(1, 1, 0.0f, 4, 9, TRANSLATE_ROUTE_INTENT_PICK_RING, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-
-            sprintf(txt, "\r\nPath Command: 2\r\n");
-            HAL_UART_Transmit(&huart1, (uint8_t *)txt, strlen(txt), 0xffff);
-            TranslateRouteCmd_GenerateWithIntent(1, 1, 0.0f, 4, 9, TRANSLATE_ROUTE_INTENT_PLACE_RING, path_cmd_test, sizeof(path_cmd_test));
-            for (uint16_t i = 0; i < strlen(path_cmd_test); i++)
-            {
-                char c = path_cmd_test[i];
-                HAL_UART_Transmit(&huart1, (uint8_t *)&c, 1, 0xffff);
-            }
-            delay_20ms(50);
-        }
     while (1)
     {
         if (Button_IsPressed(BUTTON_PC0))
-        // if(1)
         {   
-            Path_t test_path;
-            AStar_GridPoint_t start = {1, 1}; // 起点网格坐标 (1,1)
-            AStar_GridPoint_t goal = {4, 9};  // 终点网格坐标 (4,9)
-            uint8_t result = AStar_FindPath(start, goal, &test_path);
-            char buffer[300];
-            sprintf(buffer, "A* Pathfinding Result: %s\r\n", result ? "Success" : "Failure");
-            HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
 
-            // HAL 串口1发出path结果
-            for (uint16_t i = 0; i < test_path.point_count; i++)
-            {
-                sprintf(buffer, "Point %d: (%d, %d)\r\n", i, test_path.points[i].x_mm, test_path.points[i].y_mm);
-                HAL_UART_Transmit(&huart1, (uint8_t *)buffer, strlen(buffer), 0xffff);
-            }
             // route(test5);
-            // route(test_s);
+            route(test_s);
         }
         delay_20ms(10);
     }
