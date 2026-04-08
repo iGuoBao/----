@@ -108,15 +108,9 @@ int main(void)
     MX_TIM8_Init();
     MX_TIM6_Init();
     MX_I2C1_Init();
-    /* USER CODE BEGIN 2 */
-    // Delay_ms(1000);
-    // Encoder_Init();
-    //  HAL_UART_Transmit(&huart2,seven_commend,4,0xffff);
 
     OLED_Init();
     imu901_init();
-
-    HAL_Delay(100);
 
     OLED_Update();
     Encoder_Init();
@@ -128,6 +122,7 @@ int main(void)
     OLED_Clear();
     motor_speed_set(0, 0);
 
+    GlobalLoc_Init();
     AStar_Init();
     TranslateRouteCmd_SetSpecialEdgeRules();
 

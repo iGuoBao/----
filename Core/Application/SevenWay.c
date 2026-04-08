@@ -107,17 +107,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	// imu901 接收回调
 	if (huart == &huart3)
 	{
-		uint8_t ch;
-		if (imu901_uart_receive(&ch, 1)) /*!< 获取串口fifo一个字节 */
-		{
-			if (imu901_unpack(ch)) /*!< 解析出有效数据包 */
-			{
-				if (rxPacket.startByte2 == UP_BYTE2) /*!< 主动上传的数据包 */
-				{
-					atkpParsing(&rxPacket);
-				}
-			}
-		}
+		imu901_rx_cplt_callback();
 	}
 }
 static int prav_data = 0;

@@ -46,6 +46,8 @@ atkp_t 			rxPacket;
 const uint16_t gyroFsrTable[4] = {250, 500, 1000, 2000};
 const uint8_t  accFsrTable[4] = {2, 4, 8, 16};
 
+static uint8_t imu901RxByte;
+
 
 
 
@@ -367,17 +369,37 @@ void imu901_init(void)
 	// atkpWriteReg(REG_SAVE, 0, 1); 	/* 发送保存参数至模块内部Flash，否则模块掉电不保存 */
 
     /* 读出寄存器参数（测试） */
-    atkpReadReg(REG_GYROFSR, &data);
-    imu901Param.gyroFsr = data;
+    // atkpReadReg(REG_GYROFSR, &data);
+    // imu901Param.gyroFsr = data;
 
-    atkpReadReg(REG_ACCFSR, &data);
-    imu901Param.accFsr = data;
+    // atkpReadReg(REG_ACCFSR, &data);
+    // imu901Param.accFsr = data;
 
-    atkpReadReg(REG_GYROBW, &data);
-    imu901Param.gyroBW = data;
+    // atkpReadReg(REG_GYROBW, &data);
+    // imu901Param.gyroBW = data;
 
-    atkpReadReg(REG_ACCBW, &data);
-    imu901Param.accBW = data;
+    // atkpReadReg(REG_ACCBW, &data);
+    // imu901Param.accBW = data;
+
+    imu901_start_receive_it();
+}
+
+void imu901_start_receive_it(void)
+{
+    HAL_UART_Receive_IT(&huart3, &imu901RxByte, 1);
+}
+
+void imu901_rx_cplt_callback(void)
+{
+    if (imu901_unpack(imu901RxByte))
+    {
+        if (rxPacket.startByte2 == UP_BYTE2)
+        {
+            atkpParsing(&rxPacket);
+        }
+    }
+
+    HAL_UART_Receive_IT(&huart3, &imu901RxByte, 1);
 }
 
 

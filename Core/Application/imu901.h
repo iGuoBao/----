@@ -183,6 +183,8 @@ extern atkp_t 			rxPacket;
 
 
 void imu901_init(void);
+void imu901_start_receive_it(void);
+void imu901_rx_cplt_callback(void);
 
 uint8_t imu901_unpack(uint8_t ch);
 void atkpParsing(atkp_t *packet);
