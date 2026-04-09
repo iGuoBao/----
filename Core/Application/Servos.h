@@ -11,8 +11,7 @@
 void delay_20ms(int time);
 
 void Servos_Init(void);
-void Servos_Lift(int lift);
-void Servos_Retract(int retract);
+
 void Servos_up(int position);
 void Servos_down(int position);
 void Servos_close(int position);

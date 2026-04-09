@@ -1,6 +1,6 @@
 #include "main.h"
 #include "Servos.h"
-static char k[16]="";
+static char k[22]="";
 void delay(int time)
 {
 	int t=0;
@@ -43,40 +43,13 @@ void Servos_Init(void){
 }
 #endif
 
-void Servos_Lift(int lift){
-	switch(lift){
-		case NONE:
-			HAL_UART_Transmit(&huart1, (uint8_t *)"#2P1500T100\r\n", 13, 0xffff);
-			break;
-		case UP:
-			HAL_UART_Transmit(&huart1, (uint8_t *)"#2P1100T100\r\n", 13, 0xffff);
-			break;
-		case DOWN:
-			HAL_UART_Transmit(&huart1, (uint8_t *)"#2P1900T100\r\n", 13, 0xffff);
-			break;
-	}
-}
-
-void Servos_Retract(int retract){
-	switch(retract){
-		case NONE:
-			break;
-		case OPEN:
-			HAL_UART_Transmit(&huart1, (uint8_t *)"#1P1000T100!\r\n", 13, 0xffff);//#1P1100T100
-			break;
-		case CLOSE:
-			HAL_UART_Transmit(&huart1, (uint8_t *)"#1P1400T100!\r\n", 13, 0xffff);
-			break;
-	}
-}
-
 
 void Servos_down(int position) {
 #if defined(NEW_SERVO_0)
-	sprintf(k,"#000P1054T000!%d\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
+	sprintf(k,"#000%4dT000!%d\r\n", SERVO_RETRACT_PWM, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,20);
 #else
-	sprintf(k,"#000P0954T000%d\r\n",position);
+	sprintf(k,"#000P%4dT000%d\r\n", SERVO_RETRACT_PWM, position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,18);
 #endif
 	 
@@ -86,11 +59,11 @@ void Servos_down(int position) {
 
 void Servos_up(int position) {
 #if defined(NEW_SERVO_0)
-	sprintf(k,"#000P2229T000!%d\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
+	sprintf(k,"#000P%4dT000!%d\r\n", SERVO_LIFT_PWM, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,20);
 #else
-	sprintf(k,"#000P2229T000%d\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,18);
+	sprintf(k,"#000P%4dT000%d\r\n", SERVO_LIFT_PWM, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
 #endif
 	delay_20ms(150);
 } 
