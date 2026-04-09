@@ -32,6 +32,9 @@
  *      BASE_CAR_4_4 : 4队4号底盘
  */
 
+//  #define NEW_SERVO_0 // 升降
+//  #define NEW_SERVO_1 // 爪子
+
 // 队伍1
 // #define CLAW_CAR_1_1
 // #define CLAW_CAR_1_2
