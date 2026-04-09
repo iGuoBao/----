@@ -296,16 +296,36 @@ static float delta = 0;
 static float data__l;
 static float target;
 static float prev_sevenway = 0.0f;
+static int prev_motion_dir = 0;
 static uint32_t mpu6050_ctrl_tick20ms = 0;
 // Ѳ�߿��ƺ�����20ms���ڵ��ã�
 void mpu6050_sevenway_control(int speed)
 {
 
 #if se
+    int speed_abs;
+    int motion_dir;
+    float sevenway_for_control;
+
     target = target_angle;
     error_calculate();
-    delta = 0.05 * sevenway_data + 0.95 * delta;
-    if (speed > 70)
+
+    speed_abs = abs(speed);
+    motion_dir = (speed >= 0) ? 1 : -1;
+    sevenway_for_control = (float)(motion_dir * sevenway_data);
+
+    if (prev_motion_dir != 0 && prev_motion_dir != motion_dir)
+    {
+        delta = 0.0f;
+        ms_c.integral = 0.0f;
+        ms_c.prev_error = 0.0f;
+        ms_c.prev_input = 0.0f;
+        ms_c.derivative_filtered = 0.0f;
+    }
+    prev_motion_dir = motion_dir;
+
+    delta = 0.05f * sevenway_for_control + 0.95f * delta;
+    if (speed_abs > 70)
     {
         ms_c.output_limit = 15.0f;
         if (fabsf(delta) >= 24)
@@ -334,10 +354,11 @@ void mpu6050_sevenway_control(int speed)
 #else
     if (receive_flag)
     {
+        int motion_dir = (speed >= 0) ? 1 : -1;
         mpu6050_ctrl_tick20ms++;
         receive_flag = 0;
         error_calculate();
-        delta = 0.05 * sevenway_data + 0.95 * delta;
+        delta = 0.05f * (float)(motion_dir * sevenway_data) + 0.95f * delta;
         data__l = PID_Update(&ms_c, 0, delta);
         target_angle = Normalization(target_angle + data__l);
     }

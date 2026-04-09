@@ -34,7 +34,7 @@
 
 #define SERVO_LIFT_PWM      2229  // 升降升 pwm
 #define SERVO_RETRACT_PWM   954  // 升降降 pwm
-#define SERVO_STOP_PWM      1500  // 升降停 pwm
+#define SERVO_STOP_PWM      1600  // 升降停 pwm
 // END 舵机参数
 
 // START 循迹速度设置
