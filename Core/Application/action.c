@@ -199,6 +199,28 @@ void forward(int data)
     motor_speed_set(0, 0);
 }
 
+void forward_delay(int delay_20ms, int speed)
+{
+    uint32_t start_tick = 0;
+
+    if (delay_20ms <= 0)
+    {
+        motor_pid_init();
+        motor_speed_set(0, 0);
+        return;
+    }
+
+    start_tick = mpu6050_get_ctrl_tick20ms();
+
+    while ((uint32_t)(mpu6050_get_ctrl_tick20ms() - start_tick) < (uint32_t)delay_20ms)
+    {
+        mpu6050_sevenway_control(speed);
+    }
+
+    motor_pid_init();
+    motor_speed_set(0, 0);
+}
+
 void forward_begin()
 {
     uint32_t t1 = 0;
@@ -292,7 +314,7 @@ void route(char Road[50])
             turn_around();
             break;
         case 'T':
-            Servos_up(1);
+            Servos_up(2);
             break;
         case 't':
             Servos_up(1);
@@ -301,33 +323,28 @@ void route(char Road[50])
             Servos_down(1); // 0004
             break;
         case 'D':
-            Servos_down(1); // 0004
+            Servos_down(2); // 0004
             break;
         case 'H':
             Servos_close(1800);
             break;
         case 'K':
-            Servos_close(1650);
+            Servos_close(SERVO_CLOSE_PWM);
             break;
         case 'O':
-            Servos_open(1250);
+            Servos_open(SERVO_OPEN_PWM);
             break;
         case 'f':
-            motor_speed_set(45, 45);
-            delay_20ms(70);
-            motor_speed_set(0, 0);
+            // motor_speed_set(45, 45);
+            // delay_20ms(70);
+            // motor_speed_set(0, 0);
+            forward_delay(85, 40);
             break;
         case 'b':
-            motor_speed_set(-70, -70);
-            delay_20ms(25);
-            motor_speed_set(0, 0);
+            forward_delay(70, -40);
             break;
         case 'B':
-            // back(600);
-            // forward(-1);
-            motor_speed_set(-70, -70);
-            delay_20ms(40);
-            motor_speed_set(0, 0);
+            forward_delay(85, -50);
             break;
         case 'w':
             wait();
@@ -339,10 +356,6 @@ void route(char Road[50])
                 mpu6050_pid_control(0, target_angle);
             }
             break;
-        case 'x':
-            z_data = Normalization(z_data-5);
-        case 'y':
-            z_data = Normalization(z_data+5);
         default:
             break;
         }

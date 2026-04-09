@@ -32,6 +32,9 @@
  *      BASE_CAR_4_4 : 4队4号底盘
  */
 
+//  #define NEW_SERVO_0 // 升降
+//  #define NEW_SERVO_1 // 爪子
+
 // 队伍1
 // #define CLAW_CAR_1_1
 // #define CLAW_CAR_1_2
@@ -72,16 +75,16 @@
 
 // START 循迹速度设置
 #define LOW_SPEED_LAST_1 80
-#define LOW_SPEED_LAST_2 110
-#define LOW_SPEED_LAST_3 130
-#define LOW_SPEED_LAST_MORE 150
+#define LOW_SPEED_LAST_2 90
+#define LOW_SPEED_LAST_3 100
+#define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置
 
 // START MPU6050转向PID参数
 #define MPU6050_TURN_P 2.00f
 #define MPU6050_TURN_I 0.5f
 #define MPU6050_TURN_D 0.2f
-#define MPU6050_TURN_MAX_OUTPUT 50
+#define MPU6050_TURN_MAX_OUTPUT 60
 #define MPU6050_TURN_MAX_INTEGRAL 3000
 // END MPU6050转向PID参数
 

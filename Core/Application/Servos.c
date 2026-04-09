@@ -27,11 +27,21 @@ void delay_20ms(int time)
 
 
 void Servos_Init(void){
+#if defined(NEW_SERVO_1)
+	HAL_UART_Transmit(&huart1, (uint8_t *)"#001PMOD1!\r\n", 10, 0xffff);
+#else
+	HAL_UART_Transmit(&huart1, (uint8_t *)"#001PMOD1\r\n", 9, 0xffff);
+#endif
 
-	HAL_UART_Transmit(&huart1, (uint8_t *)"#001PMOD1!\r\n", 9, 0xffff);
+#if defined(NEW_SERVO_0)
 	Delay_ms(100);
-	HAL_UART_Transmit(&huart1, (uint8_t *)"#000PMOD6!\r\n", 9, 0xffff);
+	HAL_UART_Transmit(&huart1, (uint8_t *)"#000PMOD8!\r\n", 10, 0xffff);
 }
+#else
+	Delay_ms(100);
+	HAL_UART_Transmit(&huart1, (uint8_t *)"#000PMOD8\r\n", 9, 0xffff);
+}
+#endif
 
 void Servos_Lift(int lift){
 	switch(lift){
@@ -62,28 +72,49 @@ void Servos_Retract(int retract){
 
 
 void Servos_down(int position) {
-	 sprintf(k,"#000P1154T000%d!\r\n",position);
-	 HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-	 delay_20ms(50);
+#if defined(NEW_SERVO_0)
+	sprintf(k,"#000P1054T000!%d\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
+#else
+	sprintf(k,"#000P0954T000%d\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,18);
+#endif
+	 
+	 delay_20ms(150);
 }
 
 
 void Servos_up(int position) {
-	sprintf(k,"#000P2229T000%d!\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-	delay_20ms(50);
+#if defined(NEW_SERVO_0)
+	sprintf(k,"#000P2229T000!%d\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
+#else
+	sprintf(k,"#000P2229T000%d\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,18);
+#endif
+	delay_20ms(150);
 } 
 
 
 void Servos_open(int position) {	
-	sprintf(k,"#001P%dT0500!\r\n",position);
+#if defined(NEW_SERVO_1)
+	sprintf(k,"#001P%4dT0300!\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,17);
+#else
+	sprintf(k,"#001P%4dT0300\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-	delay_20ms(10);
+#endif
+	delay_20ms(25);
 }
 
 void Servos_close(int position) {
-    sprintf(k,"#001P%dT0500!\r\n",position);
+#if defined(NEW_SERVO_1)
+    sprintf(k,"#001P%4dT0300!\r\n",position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,17);
+#else
+	sprintf(k,"#001P%4dT0300\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
-	delay_20ms(10);
+#endif
+	delay_20ms(25);
 }
 

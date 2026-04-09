@@ -7,6 +7,7 @@ void turn_left(void);
 void turn_right(void);
 void turn_around(void);
 void forward(int data);
+void forward_delay(int delay_20ms, int speed);
 int count_zeros_8bit(uint8_t num);
 void route(char Road[50]);
 void forward_begin(void);
