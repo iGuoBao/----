@@ -14,6 +14,13 @@ int count_zeros_8bit(uint8_t num)
     return count;
 }
 
+static void prepare_forward_track_control(void)
+{
+    // Keep forward tracking gains consistent with the post-turn straight-driving setup.
+    mpu6050_pid_reset(2, 0.01f, 0.02f, 200, 3000);
+    mpu6050_sevenway_init();
+}
+
 void turn_angle(float angle)
 {
     uint32_t t = tim6_at;
@@ -139,6 +146,8 @@ void forward(int data)
         data = -data;
     }
 
+    prepare_forward_track_control();
+
     flag = 0;
     while (1)
     {
@@ -202,6 +211,8 @@ void forward(int data)
 void forward_delay(int delay_20ms, int speed)
 {
     uint32_t start_tick = 0;
+
+    prepare_forward_track_control();
 
     if (delay_20ms <= 0)
     {
