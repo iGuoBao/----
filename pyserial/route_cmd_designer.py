@@ -15,6 +15,7 @@ python pyserial/route_cmd_designer.py
 
 from __future__ import annotations
 
+import json
 import re
 import tkinter as tk
 from dataclasses import dataclass
@@ -23,8 +24,8 @@ from tkinter import messagebox, ttk
 from typing import Dict, List, Optional, Tuple
 
 
-MAP_X_COUNT = 8
-MAP_Y_COUNT = 10
+MAP_X_COUNT = 9
+MAP_Y_COUNT = 11
 CELL_SIZE = 56
 CANVAS_PAD = 30
 
@@ -65,6 +66,7 @@ EDIT_MODE_ITEMS = [
     ("路径绘制", "path"),
     ("障碍开关", "obstacle"),
     ("单边障碍编辑", "edge"),
+    ("特殊路段计数编辑", "edge_units"),
     ("地块涂色", "cell_paint"),
     ("十字路口点涂色", "cross_dot"),
     ("橡皮擦", "eraser"),
@@ -119,9 +121,14 @@ class RouteCmdDesigner:
 
         self.cell_paints: Dict[Tuple[int, int], str] = {}
         self.cross_dots: Dict[Tuple[int, int], str] = {}
+        self.point_actions: Dict[int, List[str]] = {}
+        self.state_file = self.project_root / "pyserial" / "route_cmd_designer_state.json"
+        self._loading_state = False
 
         self._build_ui()
+        self._load_state()
         self._refresh_all()
+        self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
 
     # ------------------------------- UI -------------------------------
 
@@ -132,8 +139,22 @@ class RouteCmdDesigner:
         left = ttk.Frame(container)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        right = ttk.Frame(container)
-        right.pack(side=tk.RIGHT, fill=tk.Y, padx=(12, 0))
+        right_shell = ttk.Frame(container)
+        right_shell.pack(side=tk.RIGHT, fill=tk.BOTH, padx=(12, 0))
+
+        self.right_canvas = tk.Canvas(right_shell, width=500, bg="#f5f7fa", highlightthickness=0)
+        right_scroll = ttk.Scrollbar(right_shell, orient=tk.VERTICAL, command=self.right_canvas.yview)
+        self.right_canvas.configure(yscrollcommand=right_scroll.set)
+
+        self.right_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        right_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        right = ttk.Frame(self.right_canvas)
+        self._right_window_id = self.right_canvas.create_window((0, 0), window=right, anchor=tk.NW)
+        right.bind("<Configure>", self._on_right_frame_configure)
+        self.right_canvas.bind("<Configure>", self._on_right_canvas_configure)
+        self.right_canvas.bind("<Enter>", self._bind_right_mousewheel)
+        self.right_canvas.bind("<Leave>", self._unbind_right_mousewheel)
 
         canvas_w = CANVAS_COLS * CELL_SIZE + CANVAS_PAD * 2
         canvas_h = CANVAS_ROWS * CELL_SIZE + CANVAS_PAD * 2
@@ -197,17 +218,31 @@ class RouteCmdDesigner:
         ttk.Button(ctrl, text="清空路径", command=self._clear_path_keep_start).grid(
             row=6, column=1, sticky=tk.EW, padx=4, pady=4
         )
+        ttk.Button(ctrl, text="以当前终点作为起点继续", command=self._continue_from_endpoint).grid(
+            row=7, column=0, columnspan=2, sticky=tk.EW, padx=4, pady=(4, 4)
+        )
 
-        action_box = ttk.LabelFrame(right, text="快捷动作按钮", padding=10)
+        action_box = ttk.LabelFrame(right, text="快捷动作按钮（绑定当前末点）", padding=10)
         action_box.pack(fill=tk.X, pady=(10, 0))
         for idx, token in enumerate(["K", "O", "t", "d", "f", "b", "w", "L", "R", "A"]):
-            ttk.Button(action_box, text=token, width=4, command=lambda c=token: self._append_tail_token(c)).grid(
+            ttk.Button(action_box, text=token, width=4, command=lambda c=token: self._append_instant_action(c)).grid(
                 row=idx // 5,
                 column=idx % 5,
                 padx=3,
                 pady=3,
                 sticky=tk.EW,
             )
+        ttk.Button(action_box, text="撤销最近动作", command=self._undo_last_action).grid(
+            row=2, column=0, columnspan=2, sticky=tk.EW, padx=3, pady=(6, 3)
+        )
+        ttk.Button(action_box, text="清空即时动作", command=self._clear_all_instant_actions).grid(
+            row=2, column=2, columnspan=3, sticky=tk.EW, padx=3, pady=(6, 3)
+        )
+        ttk.Label(
+            action_box,
+            text="点击按钮会把动作插入当前路径末点，继续拖拽可接着走。",
+            foreground="#445",
+        ).grid(row=3, column=0, columnspan=5, sticky=tk.W, padx=3, pady=(2, 0))
 
         edit_box = ttk.LabelFrame(right, text="地图编辑", padding=10)
         edit_box.pack(fill=tk.X, pady=(10, 0))
@@ -246,25 +281,34 @@ class RouteCmdDesigner:
         )
         self.dot_color_combo.grid(row=2, column=1, sticky=tk.W, padx=4, pady=4)
 
+        ttk.Label(edit_box, text="特殊路段计数").grid(row=3, column=0, sticky=tk.W, padx=4, pady=4)
+        self.edge_units_var = tk.IntVar(value=0)
+        ttk.Spinbox(edit_box, from_=0, to=99, textvariable=self.edge_units_var, width=8).grid(
+            row=3, column=1, sticky=tk.W, padx=4, pady=4
+        )
+
         ttk.Button(edit_box, text="清空单边障碍", command=self._clear_all_blocked_edges).grid(
-            row=3, column=0, sticky=tk.EW, padx=4, pady=(8, 4)
+            row=4, column=0, sticky=tk.EW, padx=4, pady=(8, 4)
+        )
+        ttk.Button(edit_box, text="清空特殊路段计数", command=self._clear_all_edge_units).grid(
+            row=4, column=1, sticky=tk.EW, padx=4, pady=(8, 4)
         )
         ttk.Button(edit_box, text="清空地块颜色", command=self._clear_all_cell_paints).grid(
-            row=3, column=1, sticky=tk.EW, padx=4, pady=(8, 4)
+            row=5, column=0, sticky=tk.EW, padx=4, pady=(2, 4)
         )
         ttk.Button(edit_box, text="清空路口圆点", command=self._clear_all_cross_dots).grid(
-            row=4, column=0, columnspan=2, sticky=tk.EW, padx=4, pady=(2, 2)
+            row=5, column=1, sticky=tk.EW, padx=4, pady=(2, 4)
         )
         ttk.Label(
             edit_box,
-            text="单边障碍编辑：先点起点，再点相邻终点。",
+            text="边编辑：先点起点，再点相邻终点；特殊计数设为1等同清除该规则。",
             foreground="#445",
-        ).grid(row=5, column=0, columnspan=2, sticky=tk.W, padx=4, pady=(4, 0))
+        ).grid(row=6, column=0, columnspan=2, sticky=tk.W, padx=4, pady=(4, 0))
 
         output_box = ttk.LabelFrame(right, text="生成结果", padding=10)
         output_box.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
-        ttk.Label(output_box, text="路径命令(不含尾巴)").pack(anchor=tk.W)
+        ttk.Label(output_box, text="路径命令(含即时动作，不含意图尾巴/自定义尾巴)").pack(anchor=tk.W)
         self.route_cmd_var = tk.StringVar(value="")
         ttk.Entry(output_box, textvariable=self.route_cmd_var, width=40).pack(fill=tk.X, pady=(2, 8))
 
@@ -287,6 +331,32 @@ class RouteCmdDesigner:
             text="提示：ROS 视角坐标，x+ 向上、y+ 向左；路径模式下拖拽仅允许上下左右一步。",
             foreground="#445",
         ).pack(anchor=tk.W, pady=(8, 0))
+
+        self.yaw_combo.bind("<<ComboboxSelected>>", self._on_live_option_changed)
+        self.intent_combo.bind("<<ComboboxSelected>>", self._on_live_option_changed)
+        self.custom_tail_var.trace_add("write", self._on_live_option_changed)
+
+    def _on_right_frame_configure(self, _event: tk.Event) -> None:
+        self.right_canvas.configure(scrollregion=self.right_canvas.bbox("all"))
+
+    def _on_right_canvas_configure(self, event: tk.Event) -> None:
+        self.right_canvas.itemconfigure(self._right_window_id, width=event.width)
+
+    def _bind_right_mousewheel(self, _event: tk.Event) -> None:
+        self.right_canvas.bind_all("<MouseWheel>", self._on_right_mousewheel)
+
+    def _unbind_right_mousewheel(self, _event: tk.Event) -> None:
+        self.right_canvas.unbind_all("<MouseWheel>")
+
+    def _on_right_mousewheel(self, event: tk.Event) -> None:
+        delta = int(-event.delta / 120)
+        if delta != 0:
+            self.right_canvas.yview_scroll(delta, "units")
+
+    def _on_live_option_changed(self, *_args: object) -> None:
+        if self._loading_state:
+            return
+        self._refresh_all()
 
     # ---------------------------- Parse Rules ----------------------------
 
@@ -402,11 +472,13 @@ class RouteCmdDesigner:
             self.canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill=dot_color, outline="")
 
         # 单边障碍编辑起点高亮
-        if self.edge_edit_first is not None and self._edit_mode_from_combo() == "edge":
+        mode = self._edit_mode_from_combo()
+        if self.edge_edit_first is not None and mode in ("edge", "edge_units"):
             sx, sy = self.edge_edit_first
             if self._is_valid_grid(sx, sy):
                 c0x, c0y, c1x, c1y = self._grid_to_canvas(sx, sy)
-                self.canvas.create_rectangle(c0x + 2, c0y + 2, c1x - 2, c1y - 2, outline="#f97316", width=3)
+            outline = "#f97316" if mode == "edge" else "#7c3aed"
+            self.canvas.create_rectangle(c0x + 2, c0y + 2, c1x - 2, c1y - 2, outline=outline, width=3)
 
         # 单向阻断边
         for (x1g, y1g, x2g, y2g) in self.blocked_edges:
@@ -457,6 +529,34 @@ class RouteCmdDesigner:
                 color = "#dc2626"
             self.canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill=color, outline="white", width=1)
             self.canvas.create_text(cx, cy - 14, text=str(idx), fill="#111", font=("Consolas", 9, "bold"))
+
+        # 即时动作标记（绑定到路径点）
+        for idx, tokens in self.point_actions.items():
+            if idx < 0 or idx >= len(self.path_points) or not tokens:
+                continue
+            px, py = self.path_points[idx]
+            cx, cy = self._cell_center(px, py)
+            action_text = "".join(tokens)
+            if len(action_text) > 10:
+                action_text = action_text[:10] + "..."
+            tag_w = max(26, 7 * len(action_text) + 8)
+            self.canvas.create_rectangle(
+                cx + 10,
+                cy - 12,
+                cx + 10 + tag_w,
+                cy + 4,
+                fill="#fff7ed",
+                outline="#fb923c",
+                width=1,
+            )
+            self.canvas.create_text(
+                cx + 14,
+                cy - 4,
+                text=action_text,
+                anchor=tk.W,
+                fill="#7c2d12",
+                font=("Consolas", 8, "bold"),
+            )
 
     def _cell_center(self, x: int, y: int) -> Tuple[int, int]:
         x0, y0, x1, y1 = self._grid_to_canvas(x, y)
@@ -509,7 +609,9 @@ class RouteCmdDesigner:
 
         # 往回拖一格：撤销
         if len(self.path_points) >= 2 and cell == self.path_points[-2]:
+            removed_index = len(self.path_points) - 1
             self.path_points.pop()
+            self._drop_actions_from_index(removed_index)
             self.status_var.set("回退一步")
             self._refresh_all()
             return
@@ -535,6 +637,9 @@ class RouteCmdDesigner:
             return
         if mode == "edge":
             self._toggle_blocked_edge(cell)
+            return
+        if mode == "edge_units":
+            self._edit_edge_units(cell)
             return
         if mode == "cell_paint":
             self._paint_cell(cell)
@@ -595,6 +700,49 @@ class RouteCmdDesigner:
         self.status_var.set(action if not invalid else f"{action}；{invalid}")
         self._refresh_all()
 
+    def _edit_edge_units(self, cell: Tuple[int, int]) -> None:
+        if self.edge_edit_first is None:
+            self.edge_edit_first = cell
+            self.status_var.set(f"特殊路段起点已选 {cell}，请点相邻终点")
+            self._refresh_all()
+            return
+
+        first = self.edge_edit_first
+        if cell == first:
+            self.edge_edit_first = None
+            self.status_var.set("已取消特殊路段编辑")
+            self._refresh_all()
+            return
+
+        dx = cell[0] - first[0]
+        dy = cell[1] - first[1]
+        if abs(dx) + abs(dy) != 1:
+            self.edge_edit_first = cell
+            self.status_var.set(f"终点需与起点相邻，已改选新起点 {cell}")
+            self._refresh_all()
+            return
+
+        edge = (first[0], first[1], cell[0], cell[1])
+        try:
+            units = max(0, int(self.edge_units_var.get()))
+        except (TypeError, ValueError, tk.TclError):
+            units = 0
+            self.edge_units_var.set(0)
+
+        if units == 1:
+            if edge in self.edge_units:
+                self.edge_units.pop(edge, None)
+                action = f"已清除特殊计数 {first}->{cell}（恢复默认1）"
+            else:
+                action = f"{first}->{cell} 本来就是默认计数1"
+        else:
+            self.edge_units[edge] = units
+            action = f"已设置特殊计数 {first}->{cell} = {units}"
+
+        self.edge_edit_first = None
+        self.status_var.set(action)
+        self._refresh_all()
+
     def _paint_cell(self, cell: Tuple[int, int]) -> None:
         color = self._palette_value_from_label(self.cell_color_text_var.get(), CELL_PALETTE_ITEMS)
         if color:
@@ -640,6 +788,16 @@ class RouteCmdDesigner:
                 self.blocked_edges.remove(edge)
             removed_parts.append(f"单边障碍{len(removed_edges)}条")
 
+        removed_units_edges = [
+            edge
+            for edge in self.edge_units
+            if (edge[0], edge[1]) == cell or (edge[2], edge[3]) == cell
+        ]
+        if removed_units_edges:
+            for edge in removed_units_edges:
+                self.edge_units.pop(edge, None)
+            removed_parts.append(f"特殊计数{len(removed_units_edges)}条")
+
         invalid = self._sync_path_after_map_change()
 
         if removed_parts:
@@ -652,59 +810,90 @@ class RouteCmdDesigner:
     # ---------------------------- Commands ----------------------------
 
     def _generate_command(self) -> None:
-        try:
-            route_cmd = self._build_route_cmd_from_path()
-        except ValueError as exc:
-            messagebox.showerror("生成失败", str(exc))
-            return
-
-        intent_code = self._intent_code_from_combo()
-        intent_tail = INTENT_TAIL_MAP.get(intent_code, "")
-        custom_tail = self.custom_tail_var.get().strip()
-        final_cmd = route_cmd + intent_tail + custom_tail
-
-        self.route_cmd_var.set(route_cmd)
-        self.final_cmd_var.set(final_cmd)
-        self.status_var.set("命令生成成功")
+        if self._update_command_preview(show_error=True):
+            self.status_var.set("命令生成成功")
 
     def _build_route_cmd_from_path(self) -> str:
-        if len(self.path_points) < 2:
+        if not self.path_points:
             return ""
 
         heading = self._heading_from_combo()
         cmd: List[str] = []
-        i = 1
+        run_heading: Optional[int] = None
+        run_units = 0
 
-        while i < len(self.path_points):
-            from_xy = self.path_points[i - 1]
-            to_xy = self.path_points[i]
-            seg_heading = self._step_to_heading(from_xy, to_xy)
-
-            turn = self._turn_cmd(heading, seg_heading)
-            if turn:
-                cmd.append(turn)
-            heading = seg_heading
-
-            units = 0
-            while i < len(self.path_points):
-                a = self.path_points[i - 1]
-                b = self.path_points[i]
-                h = self._step_to_heading(a, b)
-                if h != seg_heading:
-                    break
-                units += self.edge_units.get((a[0], a[1], b[0], b[1]), 1)
-                i += 1
-
-            if units <= 0:
+        def flush_run() -> None:
+            nonlocal heading, run_heading, run_units
+            if run_heading is None:
+                return
+            if run_units <= 0:
                 raise ValueError("存在累计前进计数为 0 的连续段，无法编码为 1~9 命令")
 
+            turn = self._turn_cmd(heading, run_heading)
+            if turn:
+                cmd.append(turn)
+            heading = run_heading
+
+            units = run_units
             while units >= 9:
                 cmd.append("9")
                 units -= 9
             if units > 0:
                 cmd.append(str(units))
 
+            run_heading = None
+            run_units = 0
+
+        def append_actions_at(path_index: int) -> None:
+            tokens = self.point_actions.get(path_index, [])
+            if not tokens:
+                return
+            flush_run()
+            cmd.extend(tokens)
+
+        append_actions_at(0)
+
+        for i in range(1, len(self.path_points)):
+            from_xy = self.path_points[i - 1]
+            to_xy = self.path_points[i]
+            seg_heading = self._step_to_heading(from_xy, to_xy)
+            seg_units = self.edge_units.get((from_xy[0], from_xy[1], to_xy[0], to_xy[1]), 1)
+            if seg_units < 0:
+                raise ValueError(f"边 {from_xy}->{to_xy} 的前进计数为 {seg_units}，必须 >= 0")
+
+            if run_heading is None:
+                run_heading = seg_heading
+                run_units = seg_units
+            elif run_heading == seg_heading:
+                run_units += seg_units
+            else:
+                flush_run()
+                run_heading = seg_heading
+                run_units = seg_units
+
+            append_actions_at(i)
+
+        flush_run()
+
         return "".join(cmd)
+
+    def _update_command_preview(self, show_error: bool = False) -> bool:
+        try:
+            route_cmd = self._build_route_cmd_from_path()
+        except ValueError as exc:
+            self.route_cmd_var.set("")
+            self.final_cmd_var.set("")
+            if show_error:
+                messagebox.showerror("生成失败", str(exc))
+            return False
+
+        intent_code = self._intent_code_from_combo()
+        intent_tail = INTENT_TAIL_MAP.get(intent_code, "")
+        custom_tail = self.custom_tail_var.get().strip()
+
+        self.route_cmd_var.set(route_cmd)
+        self.final_cmd_var.set(route_cmd + intent_tail + custom_tail)
+        return True
 
     # ---------------------------- Button Actions ----------------------------
 
@@ -720,27 +909,67 @@ class RouteCmdDesigner:
 
         self.start_point = (x, y)
         self.path_points = [self.start_point]
-        self.route_cmd_var.set("")
-        self.final_cmd_var.set("")
+        self.point_actions.clear()
         self.status_var.set(f"起点已设置为 {self.start_point}")
+        self._refresh_all()
+
+    def _continue_from_endpoint(self) -> None:
+        if not self.path_points:
+            return
+        last = self.path_points[-1]
+        self.start_point = last
+        self.path_points = [last]
+        self.point_actions.clear()
+        self.start_x_var.set(last[0])
+        self.start_y_var.set(last[1])
+        self.status_var.set(f"已将当前终点 {last} 设为新起点")
         self._refresh_all()
 
     def _undo_step(self) -> None:
         if len(self.path_points) > 1:
+            removed_index = len(self.path_points) - 1
             self.path_points.pop()
+            self._drop_actions_from_index(removed_index)
             self.status_var.set("撤销成功")
             self._refresh_all()
 
     def _clear_path_keep_start(self) -> None:
         self.path_points = [self.start_point]
-        self.route_cmd_var.set("")
-        self.final_cmd_var.set("")
+        self.point_actions.clear()
         self.status_var.set("路径已清空")
         self._refresh_all()
 
-    def _append_tail_token(self, token: str) -> None:
-        current = self.custom_tail_var.get()
-        self.custom_tail_var.set(current + token)
+    def _append_instant_action(self, token: str) -> None:
+        if not self.path_points:
+            self.path_points = [self.start_point]
+
+        anchor_idx = len(self.path_points) - 1
+        self.point_actions.setdefault(anchor_idx, []).append(token)
+        self.status_var.set(f"已在点{anchor_idx}{self.path_points[anchor_idx]}后追加动作 {token}")
+        self._refresh_all()
+
+    def _undo_last_action(self) -> None:
+        if not self.point_actions:
+            self.status_var.set("当前没有即时动作可撤销")
+            return
+
+        for idx in sorted(self.point_actions.keys(), reverse=True):
+            tokens = self.point_actions.get(idx, [])
+            if not tokens:
+                continue
+            token = tokens.pop()
+            if not tokens:
+                self.point_actions.pop(idx, None)
+            self.status_var.set(f"已撤销点{idx}上的动作 {token}")
+            self._refresh_all()
+            return
+
+        self.status_var.set("当前没有即时动作可撤销")
+
+    def _clear_all_instant_actions(self) -> None:
+        self.point_actions.clear()
+        self.status_var.set("已清空所有即时动作")
+        self._refresh_all()
 
     def _copy_final_cmd(self) -> None:
         text = self.final_cmd_var.get().strip()
@@ -771,6 +1000,12 @@ class RouteCmdDesigner:
         self.status_var.set("已清空所有单边障碍" if not invalid else f"已清空所有单边障碍；{invalid}")
         self._refresh_all()
 
+    def _clear_all_edge_units(self) -> None:
+        self.edge_units.clear()
+        self.edge_edit_first = None
+        self.status_var.set("已清空所有特殊路段计数")
+        self._refresh_all()
+
     def _clear_all_cell_paints(self) -> None:
         self.cell_paints.clear()
         self.status_var.set("已清空所有地块颜色")
@@ -793,9 +1028,18 @@ class RouteCmdDesigner:
         self._draw_path()
 
         self.path_text.delete("1.0", tk.END)
-        self.path_text.insert(tk.END, "索引\t坐标\n")
+        self.path_text.insert(tk.END, "索引\t坐标\t即时动作\n")
         for i, p in enumerate(self.path_points):
-            self.path_text.insert(tk.END, f"{i}\t{p}\n")
+            actions = "".join(self.point_actions.get(i, []))
+            self.path_text.insert(tk.END, f"{i}\t{p}\t{actions}\n")
+
+        self._update_command_preview(show_error=False)
+        self._save_state(silent=True)
+
+    def _drop_actions_from_index(self, start_index: int) -> None:
+        remove_keys = [idx for idx in self.point_actions.keys() if idx >= start_index]
+        for idx in remove_keys:
+            self.point_actions.pop(idx, None)
 
     @staticmethod
     def _is_valid_grid(x: int, y: int) -> bool:
@@ -842,16 +1086,219 @@ class RouteCmdDesigner:
             curr_cell = self.path_points[i]
             if curr_cell in self.obstacles:
                 self.path_points = [self.start_point]
-                self.route_cmd_var.set("")
-                self.final_cmd_var.set("")
+                self.point_actions.clear()
                 return f"路径经过障碍 {curr_cell}，已自动清空路径"
             if self._is_blocked_edge(prev_cell, curr_cell):
                 self.path_points = [self.start_point]
-                self.route_cmd_var.set("")
-                self.final_cmd_var.set("")
+                self.point_actions.clear()
                 return f"路径边 {prev_cell}->{curr_cell} 被封锁，已自动清空路径"
 
         return ""
+
+    def _save_state(self, silent: bool = True) -> None:
+        if self._loading_state:
+            return
+
+        try:
+            edge_units_value = int(self.edge_units_var.get())
+        except (TypeError, ValueError, tk.TclError):
+            edge_units_value = 0
+
+        data = {
+            "version": 1,
+            "start_point": [self.start_point[0], self.start_point[1]],
+            "path_points": [[x, y] for x, y in self.path_points],
+            "point_actions": {str(idx): "".join(tokens) for idx, tokens in self.point_actions.items() if tokens},
+            "obstacles": [[x, y] for x, y in sorted(self.obstacles)],
+            "blocked_edges": [[x1, y1, x2, y2] for (x1, y1, x2, y2) in sorted(self.blocked_edges)],
+            "edge_units": [[x1, y1, x2, y2, units] for (x1, y1, x2, y2), units in sorted(self.edge_units.items())],
+            "cell_paints": [[x, y, color] for (x, y), color in sorted(self.cell_paints.items())],
+            "cross_dots": [[x, y, color] for (x, y), color in sorted(self.cross_dots.items())],
+            "yaw_text": self.yaw_text_var.get(),
+            "intent_text": self.intent_text_var.get(),
+            "custom_tail": self.custom_tail_var.get(),
+            "edit_mode_text": self.edit_mode_text_var.get(),
+            "cell_color_text": self.cell_color_text_var.get(),
+            "dot_color_text": self.dot_color_text_var.get(),
+            "edge_units_value": edge_units_value,
+        }
+
+        try:
+            self.state_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as exc:
+            if not silent:
+                messagebox.showerror("保存失败", f"状态保存失败: {exc}")
+
+    def _load_state(self) -> bool:
+        if not self.state_file.exists():
+            return False
+
+        try:
+            data = json.loads(self.state_file.read_text(encoding="utf-8", errors="ignore"))
+        except Exception as exc:
+            self.status_var.set(f"状态文件读取失败，已忽略: {exc}")
+            return False
+
+        self._loading_state = True
+        try:
+            start_raw = data.get("start_point")
+            start = self._parse_grid_cell(start_raw)
+            if start is not None:
+                self.start_point = start
+
+            path_raw = data.get("path_points")
+            loaded_path: List[Tuple[int, int]] = []
+            if isinstance(path_raw, list):
+                for item in path_raw:
+                    cell = self._parse_grid_cell(item)
+                    if cell is not None:
+                        loaded_path.append(cell)
+            if loaded_path:
+                self.path_points = loaded_path
+                self.start_point = loaded_path[0]
+            else:
+                self.path_points = [self.start_point]
+
+            if "obstacles" in data and isinstance(data.get("obstacles"), list):
+                loaded_obstacles: set[Tuple[int, int]] = set()
+                for item in data["obstacles"]:
+                    cell = self._parse_grid_cell(item)
+                    if cell is not None:
+                        loaded_obstacles.add(cell)
+                self.obstacles = loaded_obstacles
+
+            if "blocked_edges" in data and isinstance(data.get("blocked_edges"), list):
+                loaded_edges: set[Tuple[int, int, int, int]] = set()
+                for item in data["blocked_edges"]:
+                    if isinstance(item, (list, tuple)) and len(item) == 4:
+                        try:
+                            x1, y1, x2, y2 = map(int, item)
+                        except (TypeError, ValueError):
+                            continue
+                        if self._is_valid_grid(x1, y1) and self._is_valid_grid(x2, y2):
+                            loaded_edges.add((x1, y1, x2, y2))
+                self.blocked_edges = loaded_edges
+
+            if "edge_units" in data and isinstance(data.get("edge_units"), list):
+                loaded_units: Dict[Tuple[int, int, int, int], int] = {}
+                for item in data["edge_units"]:
+                    if isinstance(item, (list, tuple)) and len(item) == 5:
+                        try:
+                            x1, y1, x2, y2, units = map(int, item)
+                        except (TypeError, ValueError):
+                            continue
+                        if (
+                            self._is_valid_grid(x1, y1)
+                            and self._is_valid_grid(x2, y2)
+                            and units >= 0
+                        ):
+                            if units == 1:
+                                continue
+                            loaded_units[(x1, y1, x2, y2)] = units
+                self.edge_units = loaded_units
+
+            if "cell_paints" in data and isinstance(data.get("cell_paints"), list):
+                loaded_paints: Dict[Tuple[int, int], str] = {}
+                for item in data["cell_paints"]:
+                    if not (isinstance(item, (list, tuple)) and len(item) == 3):
+                        continue
+                    cell = self._parse_grid_cell(item[:2])
+                    color = str(item[2])
+                    if cell is not None and color:
+                        loaded_paints[cell] = color
+                self.cell_paints = loaded_paints
+
+            if "cross_dots" in data and isinstance(data.get("cross_dots"), list):
+                loaded_dots: Dict[Tuple[int, int], str] = {}
+                for item in data["cross_dots"]:
+                    if not (isinstance(item, (list, tuple)) and len(item) == 3):
+                        continue
+                    cell = self._parse_grid_cell(item[:2])
+                    color = str(item[2])
+                    if cell is not None and color:
+                        loaded_dots[cell] = color
+                self.cross_dots = loaded_dots
+
+            self.point_actions.clear()
+            actions_raw = data.get("point_actions")
+            if isinstance(actions_raw, dict):
+                for key, value in actions_raw.items():
+                    try:
+                        idx = int(key)
+                    except (TypeError, ValueError):
+                        continue
+                    if idx < 0 or idx >= len(self.path_points):
+                        continue
+
+                    if isinstance(value, str):
+                        tokens = [ch for ch in value if ch.strip()]
+                    elif isinstance(value, list):
+                        tokens = [str(v) for v in value if str(v).strip()]
+                    else:
+                        tokens = []
+                    if tokens:
+                        self.point_actions[idx] = tokens
+
+            self._set_label_if_valid(self.yaw_text_var, str(data.get("yaw_text", "")), [x[0] for x in YAW_ITEMS])
+            self._set_label_if_valid(
+                self.intent_text_var,
+                str(data.get("intent_text", "")),
+                [x[0] for x in INTENT_ITEMS],
+            )
+            self._set_label_if_valid(
+                self.edit_mode_text_var,
+                str(data.get("edit_mode_text", "")),
+                [x[0] for x in EDIT_MODE_ITEMS],
+            )
+            self._set_label_if_valid(
+                self.cell_color_text_var,
+                str(data.get("cell_color_text", "")),
+                [x[0] for x in CELL_PALETTE_ITEMS],
+            )
+            self._set_label_if_valid(
+                self.dot_color_text_var,
+                str(data.get("dot_color_text", "")),
+                [x[0] for x in DOT_PALETTE_ITEMS],
+            )
+            self.custom_tail_var.set(str(data.get("custom_tail", "")))
+            edge_units_value_raw = data.get("edge_units_value", 0)
+            try:
+                edge_units_value = int(edge_units_value_raw)
+            except (TypeError, ValueError):
+                edge_units_value = 0
+            self.edge_units_var.set(max(0, edge_units_value))
+
+            if self.start_point in self.obstacles:
+                self.obstacles.discard(self.start_point)
+
+            self._drop_actions_from_index(len(self.path_points))
+            self.start_x_var.set(self.start_point[0])
+            self.start_y_var.set(self.start_point[1])
+            self.status_var.set(f"已加载保存状态: {self.state_file.name}")
+            return True
+        finally:
+            self._loading_state = False
+
+    def _on_window_close(self) -> None:
+        self._save_state(silent=True)
+        self.root.destroy()
+
+    @staticmethod
+    def _parse_grid_cell(raw: object) -> Optional[Tuple[int, int]]:
+        if not (isinstance(raw, (list, tuple)) and len(raw) == 2):
+            return None
+        try:
+            x, y = int(raw[0]), int(raw[1])
+        except (TypeError, ValueError):
+            return None
+        if 0 <= x < MAP_X_COUNT and 0 <= y < MAP_Y_COUNT:
+            return x, y
+        return None
+
+    @staticmethod
+    def _set_label_if_valid(var: tk.StringVar, label: str, options: List[str]) -> None:
+        if label in options:
+            var.set(label)
 
     def _is_blocked_edge(self, from_xy: Tuple[int, int], to_xy: Tuple[int, int]) -> bool:
         x1, y1 = from_xy
