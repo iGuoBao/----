@@ -323,15 +323,8 @@ void mpu6050_sevenway_control(int speed)
         ms_c.Kp = 0.5f;
         ms_c.Kd = 0.1f;
     }
-    //  ms_c.Kp=0.1f*fmaxf((fabs(delta)-15),0)+0.8f;
-    // 	   ms_c.Ki=0.003f*(fabs(delta)-15)+0.03f;
-    //	  if(fabsf(prev_suint8evenway-current_angle)!=0) ms_c.integral=0;
-    // if( fabsf((float)sevenway_data - delta) < 1)target_angle = z_data;
     data__l = PID_Update(&ms_c, 0, delta);
     target = Normalization(target + data__l);
-    OLED_ShowFloatNum(0, 48, ms_c.Kp, 2, 2, OLED_8X16);
-    OLED_ShowFloatNum(90, 48, delta, 2, 2, OLED_8X16);
-    // mpu6050_pid_control(speed, target);
     if (receive_flag)
     {
         mpu6050_ctrl_tick20ms++;

@@ -46,48 +46,52 @@ void Servos_Init(void){
 
 void Servos_down(int position) {
 #if defined(NEW_SERVO_0)
-	sprintf(k,"#000%4dT000!%d\r\n", SERVO_RETRACT_PWM, position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,20);
+	int _pos = SERVO_RETRACT_PWM;
+	sprintf(k,"#000%04dT000%d!\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	sprintf(k,"#000P%4dT000%d\r\n", SERVO_RETRACT_PWM, position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,18);
+	int _pos = SERVO_RETRACT_PWM;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	 
-	 delay_20ms(150);
+	 delay_20ms(50);
 }
 
 
 void Servos_up(int position) {
 #if defined(NEW_SERVO_0)
-	sprintf(k,"#000P%4dT000!%d\r\n", SERVO_LIFT_PWM, position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,20);
+	int _pos = SERVO_LIFT_PWM;
+	sprintf(k,"#000%04dT000%d!\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	sprintf(k,"#000P%4dT000%d\r\n", SERVO_LIFT_PWM, position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,19);
+	int _pos = SERVO_LIFT_PWM;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
-	delay_20ms(150);
+	delay_20ms(50);
 } 
 
 
 void Servos_open(int position) {	
 #if defined(NEW_SERVO_1)
 	sprintf(k,"#001P%4dT0300!\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,17);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
 	sprintf(k,"#001P%4dT0300\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
-	delay_20ms(25);
+	delay_20ms(5);
 }
 
 void Servos_close(int position) {
 #if defined(NEW_SERVO_1)
     sprintf(k,"#001P%4dT0300!\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,17);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
 	sprintf(k,"#001P%4dT0300\r\n",position);
-	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,16);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
-	delay_20ms(25);
+	delay_20ms(5);
 }
 

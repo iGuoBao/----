@@ -314,7 +314,7 @@ void route(char Road[50])
             turn_around();
             break;
         case 'T':
-            Servos_up(2);
+            Servos_up(1);
             break;
         case 't':
             Servos_up(2);
@@ -323,7 +323,7 @@ void route(char Road[50])
             Servos_down(2); // 0004
             break;
         case 'D':
-            Servos_down(2); // 0004
+            Servos_down(1); // 0004
             break;
         case 'H':
             Servos_close(1800);
@@ -334,17 +334,20 @@ void route(char Road[50])
         case 'O':
             Servos_open(SERVO_OPEN_PWM);
             break;
+        case 'Z':
+            Servos_open(SERVO_STOP_PWM);
+            break;
         case 'f':
             // motor_speed_set(45, 45);
             // delay_20ms(70);
             // motor_speed_set(0, 0);
-            forward_delay(85, 40);
+            forward_delay(90, 39);
             break;
         case 'b':
-            forward_delay(70, -40);
+            forward_delay(90, -39);
             break;
         case 'B':
-            forward_delay(85, -50);
+            forward_delay(85, -39);
             break;
         case 'w':
             wait();

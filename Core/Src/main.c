@@ -174,13 +174,17 @@ int main(void)
         {   
             // route(test5);
             // route(test_s);//测试用
-            // route("fbS");
+            // route("fwwbS");
+            route("1twwwfODwKTwwwbwOdwwZS");
+            // route("OwwwKwwwOwwwKwwwS");
         }
         else if (Button_IsPressed(BUTTON_PC1))
         {
             // route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
-            route("twwwdwwwtwwwdwwwS");
-        }
+            // route("dwtwdwtwS");
+            route("OwwwKwwwOwwwKwwwS");
+            // route("TwDwTwDwTwS");
+        } 
         else if (Button_IsPressed(BUTTON_PC2))
         {
             // route("TwwwDwwwTwwwDwwwS");
@@ -195,7 +199,7 @@ int main(void)
             // 推走方块 然后回去
             route("2b");
             // 尝试左侧拿走2分
-            route("tRfdKtbK");
+            route("TRfDKtbK");
         }
         else if (Button_IsPressed(BUTTON_PC3))
         {
@@ -209,9 +213,9 @@ int main(void)
             // 推走方块 然后回去
             route("2b");
             // 尝试右侧抓走对方满分环
-            route("tRfdKtbO");
+            route("T1RfDKTbO");
             // 尝试右侧拿走2分
-            route("AfdKtbORd");
+            route("AfDKTbORd");
         }
         delay_20ms(10);
     }
