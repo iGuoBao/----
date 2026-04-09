@@ -317,10 +317,10 @@ void route(char Road[50])
             Servos_up(2);
             break;
         case 't':
-            Servos_up(1);
+            Servos_up(2);
             break;
         case 'd':
-            Servos_down(1); // 0004
+            Servos_down(2); // 0004
             break;
         case 'D':
             Servos_down(2); // 0004

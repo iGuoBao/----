@@ -173,20 +173,45 @@ int main(void)
         if (Button_IsPressed(BUTTON_PC0))
         {   
             // route(test5);
-            route(test_s);//测试用
+            // route(test_s);//测试用
             // route("fbS");
         }
         else if (Button_IsPressed(BUTTON_PC1))
         {
-            route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
+            // route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
+            route("twwwdwwwtwwwdwwwS");
         }
         else if (Button_IsPressed(BUTTON_PC2))
         {
-            route("TwwwDwwwTwwwDwwwS");
+            // route("TwwwDwwwTwwwDwwwS");
+            // 在左侧对方区域满分环
+            route("2L2R1L1RtfObd");
+            // 去待机区
+            route("Rb");
+            // 在待机区等待
+            for (int i = 0; i < 3; i++)            {
+                delay_20ms(50);
+            }
+            // 推走方块 然后回去
+            route("2b");
+            // 尝试左侧拿走2分
+            route("tRfdKtbK");
         }
         else if (Button_IsPressed(BUTTON_PC3))
         {
-            // route(test_f_b);
+            // 在右侧对方区域阻碍对方满分
+            route("1R2KL2R1AbOd");
+            // 等待100s
+            for (int i = 0; i < 3; i++)
+            {
+                delay_20ms(50);
+            }
+            // 推走方块 然后回去
+            route("2b");
+            // 尝试右侧抓走对方满分环
+            route("tRfdKtbO");
+            // 尝试右侧拿走2分
+            route("AfdKtbORd");
         }
         delay_20ms(10);
     }

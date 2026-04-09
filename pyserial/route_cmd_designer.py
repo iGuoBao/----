@@ -849,7 +849,20 @@ class RouteCmdDesigner:
             if not tokens:
                 return
             flush_run()
-            cmd.extend(tokens)
+            nonlocal heading
+            for token in tokens:
+                token_str = str(token)
+                if not token_str:
+                    continue
+                cmd.append(token_str)
+
+                for ch in token_str:
+                    if ch == "L":
+                        heading = (heading + 1) % 4
+                    elif ch == "R":
+                        heading = (heading + 3) % 4
+                    elif ch == "A":
+                        heading = (heading + 2) % 4
 
         append_actions_at(0)
 

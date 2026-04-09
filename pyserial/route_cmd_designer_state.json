@@ -1,16 +1,18 @@
 {
   "version": 1,
   "start_point": [
-    0,
-    5
+    3,
+    9
   ],
   "path_points": [
     [
-      0,
-      5
+      3,
+      9
     ]
   ],
-  "point_actions": {},
+  "point_actions": {
+    "0": "tRfdKtbK"
+  },
   "obstacles": [],
   "blocked_edges": [],
   "edge_units": [
@@ -320,7 +322,7 @@
   "intent_text": "0-无意图",
   "custom_tail": "",
   "edit_mode_text": "路径绘制",
-  "cell_color_text": "淡红",
-  "dot_color_text": "橙点",
-  "edge_units_value": 0
+  "cell_color_text": "淡紫",
+  "dot_color_text": "黑点",
+  "edge_units_value": 1
 }
