@@ -355,7 +355,7 @@ void route(char Road[50])
             forward_delay(90, 39);
             break;
         case 'b':
-            forward_delay(90, -39);
+            forward_delay(100, -39);
             break;
         case 'B':
             forward_delay(85, -39);

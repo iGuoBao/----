@@ -182,18 +182,18 @@ int main(void)
         {
             // route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
             // route("dwtwdwtwS");
-            route("OwwwKwwwOwwwKwwwS");
+            route("OwwKwwwtwwwdwwwS");
             // route("TwDwTwDwTwS");
         } 
         else if (Button_IsPressed(BUTTON_PC2))
         {
             // route("TwwwDwwwTwwwDwwwS");
             // 在左侧对方区域满分环
-            route("2L2R1L1RtfObd");
+            route("O2KL2R1L1RtfObd");
             // 去待机区
             route("Rb");
             // 在待机区等待
-            for (int i = 0; i < 3; i++)            {
+            for (int i = 0; i < 8; i++)            {
                 delay_20ms(50);
             }
             // 推走方块 然后回去
@@ -218,7 +218,7 @@ int main(void)
             route("1tRwwwfODwKTwwwbwOdwwZ");
             // 尝试右侧拿走2分
             // route("AfDKTbORd");
-            route("AtwwwfODwKTwwwbwOdwwZ");
+            route("LLtwwwfODwKTwwwbwOdwwZ");
         }
         delay_20ms(10);
     }

@@ -65,11 +65,12 @@
 // END 小车基础物理参数
 
 // START 舵机参数
-#define SERVO_OPEN_PWM 1250  // 爪子开 pwm
-#define SERVO_CLOSE_PWM 1600 // 爪子关 pwm
+#define SERVO_OPEN_PWM      1150  // 爪子开 pwm
+#define SERVO_CLOSE_PWM     1600 // 爪子关 pwm
 
-#define SERVO_LIFT_PWM 1500  // 升降升 pwm
-#define SERVO_RETRACT_PWM 1200 // 升降降 pwm
+#define SERVO_LIFT_PWM      2229  // 升降升 pwm
+#define SERVO_RETRACT_PWM   954  // 升降降 pwm
+#define SERVO_STOP_PWM      1600  // 升降停 pwm
 // END 舵机参数
 
 // START 循迹速度设置
@@ -80,10 +81,10 @@
 // END 循迹速度设置
 
 // START MPU6050转向PID参数
-#define MPU6050_TURN_P 2.00f
-#define MPU6050_TURN_I 0.0f
+#define MPU6050_TURN_P 2.20f
+#define MPU6050_TURN_I 0.3f
 #define MPU6050_TURN_D 0.2f
-#define MPU6050_TURN_MAX_OUTPUT 120
+#define MPU6050_TURN_MAX_OUTPUT 65
 #define MPU6050_TURN_MAX_INTEGRAL 3000
 // END MPU6050转向PID参数
 
