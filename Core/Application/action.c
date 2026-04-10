@@ -59,7 +59,7 @@ void turn_angle(float angle)
                 flag++;
             }
 
-            if (flag >= 35)
+            if (flag >= 3)
             {
                 flag = 0;
                 receive_flag = 0;
@@ -346,16 +346,16 @@ void route(char Road[50])
             Servos_open(SERVO_OPEN_PWM);
             break;
         case 'Z':
-            Servos_open(SERVO_STOP_PWM);
+            Servos_up(SERVO_STOP_PWM);
             break;
         case 'f':
             // motor_speed_set(45, 45);
             // delay_20ms(70);
             // motor_speed_set(0, 0);
-            forward_delay(90, 39);
+            forward_delay(95, 40);
             break;
         case 'b':
-            forward_delay(100, -39);
+            forward_delay(110, -40);
             break;
         case 'B':
             forward_delay(85, -39);

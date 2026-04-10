@@ -24,8 +24,6 @@
 #include "usart.h"
 #include "gpio.h"
 
-
-
 // /* Private includes ----------------------------------------------------------*/
 // /* USER CODE BEGIN Includes */
 #include "imu901.h"
@@ -54,6 +52,47 @@ void SystemClock_Config(void);
 short x, y, z;
 uint8_t res1 = 8;
 
+// 策略 到左侧对方区域满分环，去待机区等待，推走方块 然后回去，尝试左侧拿走2分
+void plan_a()
+{
+    // 在左侧对方区域满分环
+    route("wO1dfw1KL2R1L1RtfObd");
+    // 去待机区
+    route("Rbw");
+    // 在待机区等待
+    for (int i = 0; i < 8; i++)
+    {
+        delay_20ms(50);
+    }
+    // 推走方块 然后回去
+    route("2bw");
+    // 尝试右侧拿走2分
+    // route("TRfDKtbK");
+    route("tRwwwfODwwKTwwwbwOdww");
+
+    route("S");
+}
+
+// 策略 到右侧对方区域阻碍对方满分，等待100s，推走方块 然后回去，尝试右侧抓走对方满分环，尝试右侧拿走2分
+void plan_b()
+{
+    // 在右侧对方区域阻碍对方满分
+    route("1R1ww1KL2R1AbO");
+    // 等待100s
+    for (int i = 0; i < 3; i++)
+    {
+        delay_20ms(50);
+    }
+    // 推走方块 然后回去
+    route("2bw");
+    // 尝试右侧抓走对方满分环
+    // route("T1RfDKTbO");
+    route("tRwwwfODwKTwwwbwOdww");
+    // 尝试右侧拿走2分
+    // route("AfDKTbORd");
+    route("LLtwwwfODwwKTwwwbwOdww");
+    route("S");
+}
 /* USER CODE END 0 */
 /**
  * @brief  The application entry point.
@@ -140,7 +179,7 @@ int main(void)
     //     'b','w','L','L','w','1','L','2','L','1','K','L','L','w','1','R','2','R','1','O',
     // 'S','\0'}; //第一轮重启
 
-    static char test_s[100] = {'T', 'w', 'w', 'D', 'w', 'w', 'w','w','T', 'S'}; // 测试用
+    static char test_s[100] = {'T', 'w', 'w', 'D', 'w', 'w', 'w', 'w', 'T', 'S'}; // 测试用
     // static char test_s[100] = {'d','t','D','T'}; //测试用
     static char te1[100] = {
         // manfen
@@ -160,65 +199,48 @@ int main(void)
 
     };
 
-    static char test1[100] = {'T', 'w', 'w', 'T', 'w', 'w', 'D', 'w', 'w', 'D', 'w', 'w', 'S'};                                                                                                                                                                                                                                                                        /*·测试代码*/
-    static char test_f_b[100] = {'1', 'w', 'w', 'f', 'w', 'w', 'b', 'w', 'w', 'w', 'w', 'w', 'S'};                                                                                                                                                                                                                                                                        /*·测试代码*/
+    static char test1[100] = {'T', 'w', 'w', 'T', 'w', 'w', 'D', 'w', 'w', 'D', 'w', 'w', 'S'};    /*·测试代码*/
+    static char test_f_b[100] = {'1', 'w', 'w', 'f', 'w', 'w', 'b', 'w', 'w', 'w', 'w', 'w', 'S'}; /*·测试代码*/
 
-    /*满分环*/ static char test2[100] = {'O', '2', 'K', 'L', '1', 'R', '2', 'w','L', '1', 'T', 'w', 'w', 'w', 'f','w', 'O', 'B', 'D', 'w', 'w', 'A','1', 'L', '1', 'R', '7', 'S'};                                                                                                                                                                        // 满分环990
+    /*满分环*/ static char test2[100] = {'O', '2', 'K', 'L', '1', 'R', '2', 'w', 'L', '1', 'T', 'w', 'w', 'w', 'f', 'w', 'O', 'B', 'D', 'w', 'w', 'A', '1', 'L', '1', 'R', '7', 'S'};                                                                                                                                                                                  // 满分环990
     /*物块八分*/ static char test3[100] = {'O', '1', 'R', '1', 'L', '2', 'L', '1', 'R', '2', 'K', 'R', 'O', '3', 'A', 'w', '8', 'A', '1', 'R', '2', 'K', 'A', '2', 'L', '1', 'O', 'B', 'A', '2', 'L', '2', 'L', '2', 'K', 'A', '2', 'R', '2', 'R', '2', 'O', 'A', '3', 'R', '1', 'K', 'A', '1', 'R', '5', 'O', 'A', '1', 'L', '2', 'K', 'A', '2', 'R', '1', 'O', 'S'}; // 方块八分960
                                                                                                                                                                                                                                                                                                                                                                        // static char test4[100] = {'D','w','w','D','R','1','R','7','S'};
-    /*完胜*/ static char test5[100] = {'O', '1', 'L', '2', 'R', '1', 'K', '2', 'L', 'T', 'w', 'f','w', 'O','B', 'D', 'w',  'A', '1', 'K', 'T', 'w',  'L','L','1','w', 'f', 'w','O', 'S','B', 'D','w',  'A', '1', 'L', '1', 'R', '6','w','f','w','b','L','L','1','R','1','K','t','w','R','f','w','O','B','w','d','w','w','A','1','L','2','K','t','w','w','A','2','R','1','f','w','O' ,'S'};
-        
+    /*完胜*/ static char test5[100] = {'O', '1', 'L', '2', 'R', '1', 'K', '2', 'L', 'T', 'w', 'f', 'w', 'O', 'B', 'D', 'w', 'A', '1', 'K', 'T', 'w', 'L', 'L', '1', 'w', 'f', 'w', 'O', 'S', 'B', 'D', 'w', 'A', '1', 'L', '1', 'R', '6', 'w', 'f', 'w', 'b', 'L', 'L', '1', 'R', '1', 'K', 't', 'w', 'R', 'f', 'w', 'O', 'B', 'w', 'd', 'w', 'w', 'A', '1', 'L', '2', 'K', 't', 'w', 'w', 'A', '2', 'R', '1', 'f', 'w', 'O', 'S'};
+
     while (1)
     {
         if (Button_IsPressed(BUTTON_PC0))
-        {   
+        {
             // route(test5);
             // route(test_s);//测试用
             // route("fwwbS");
-            route("1twwwfODwKTwwwbwOdwwZ");
+            // route("1twwwfODwKTwwwbwOdwwS"); // 三分区高度足够
             // route("OwwwKwwwOwwwKwwwS");
+
+            plan_a();
         }
         else if (Button_IsPressed(BUTTON_PC1))
         {
             // route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
             // route("dwtwdwtwS");
-            route("OwwKwwwtwwwdwwwS");
+            // route("OwwKwwwtwwwdwwwS");// ceshi
             // route("TwDwTwDwTwS");
-        } 
+
+            plan_b();
+        }
         else if (Button_IsPressed(BUTTON_PC2))
         {
             // route("TwwwDwwwTwwwDwwwS");
-            // 在左侧对方区域满分环
-            route("O2KL2R1L1RtfObd");
-            // 去待机区
-            route("Rb");
-            // 在待机区等待
-            for (int i = 0; i < 8; i++)            {
-                delay_20ms(50);
-            }
-            // 推走方块 然后回去
-            route("2b");
-            // 尝试左侧拿走2分
-            // route("TRfDKtbK");
-            route("1tLwwwfODwKTwwwbwOdwwZ");
+
+            // 策略 左侧满分环，右侧阻碍对方满分
+            // plan_a();
+            route("OwwwKwwwOwwwKwwwS");
+            
         }
         else if (Button_IsPressed(BUTTON_PC3))
         {
-            // 在右侧对方区域阻碍对方满分
-            route("1R2KL2R1AbOd");
-            // 等待100s
-            for (int i = 0; i < 3; i++)
-            {
-                delay_20ms(50);
-            }
-            // 推走方块 然后回去
-            route("2b");
-            // 尝试右侧抓走对方满分环
-            // route("T1RfDKTbO");
-            route("1tRwwwfODwKTwwwbwOdwwZ");
-            // 尝试右侧拿走2分
-            // route("AfDKTbORd");
-            route("LLtwwwfODwKTwwwbwOdwwZ");
+            // 策略 右侧阻碍对方满分
+            // plan_b();
         }
         delay_20ms(10);
     }
