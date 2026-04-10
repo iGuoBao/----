@@ -58,7 +58,6 @@ void Servos_down(int position) {
 	 delay_20ms(50);
 }
 
-
 void Servos_up(int position) {
 #if defined(NEW_SERVO_0)
 	int _pos = SERVO_LIFT_PWM;
@@ -71,7 +70,6 @@ void Servos_up(int position) {
 #endif
 	delay_20ms(50);
 } 
-
 
 void Servos_open(int position) {	
 #if defined(NEW_SERVO_1)

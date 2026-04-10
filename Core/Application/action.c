@@ -347,6 +347,9 @@ void route(char Road[50])
             break;
         case 'Z':
             Servos_up(SERVO_STOP_PWM);
+            char buf_temp[20];
+            sprintf(buf_temp, "#000PDST\r\n");
+            HAL_UART_Transmit_IT(&huart1, (uint8_t *)buf_temp, strlen(buf_temp));
             break;
         case 'f':
             // motor_speed_set(45, 45);
@@ -355,7 +358,7 @@ void route(char Road[50])
             forward_delay(95, 40);
             break;
         case 'b':
-            forward_delay(110, -40);
+            forward_delay(BACKWARD_TIME_20ms, BACKWARD_SPEED);
             break;
         case 'B':
             forward_delay(85, -39);

@@ -56,7 +56,7 @@ uint8_t res1 = 8;
 void plan_a()
 {
     // 在左侧对方区域满分环
-    route("wO1dfw1KL2R1L1RtfObd");
+    route("wO1dfw1KL2R1L1RtwfObd");
     // 去待机区
     route("Rbw");
     // 在待机区等待
@@ -66,6 +66,7 @@ void plan_a()
     }
     // 推走方块 然后回去
     route("2bw");
+    
     // 尝试右侧拿走2分
     // route("TRfDKtbK");
     route("tRwwwfODwwKTwwwbwOdww");
@@ -87,10 +88,10 @@ void plan_b()
     route("2bw");
     // 尝试右侧抓走对方满分环
     // route("T1RfDKTbO");
-    route("tRwwwfODwKTwwwbwOdww");
+    route("tRwwwfODwKTwwwbwOww");
     // 尝试右侧拿走2分
     // route("AfDKTbORd");
-    route("LLtwwwfODwwKTwwwbwOdww");
+    route("LLwwwfODwwKTwwwbwOdww");
     route("S");
 }
 /* USER CODE END 0 */
@@ -234,7 +235,7 @@ int main(void)
 
             // 策略 左侧满分环，右侧阻碍对方满分
             // plan_a();
-            route("OwwwKwwwOwwwKwwwS");
+            route("twwwdwwwS");
             
         }
         else if (Button_IsPressed(BUTTON_PC3))
