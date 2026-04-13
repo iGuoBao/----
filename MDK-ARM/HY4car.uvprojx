@@ -777,6 +777,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Application\imu901.c</FilePath>
             </File>
+            <File>
+              <FileName>plan.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Application\plan.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

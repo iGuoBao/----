@@ -1,0 +1,9 @@
+#ifndef PLAN_H
+#define PLAN_H
+
+void plan_a(void);
+void plan_b(void);
+void plan_4_a(void);
+void plan_4_b(void);
+
+#endif // PLAN_H
