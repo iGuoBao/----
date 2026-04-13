@@ -178,12 +178,16 @@ int main(void)
         }
         else if (Button_IsPressed(BUTTON_PC2))
         {
-            route("twwwdwwwS");
+            route("R1L1");
+            delay_20ms(50);
+            GlobalLoc_ResetPose(400, 1200, 0);
+            plan_shovel_patrol_loop();
         
         }
         else if (Button_IsPressed(BUTTON_PC3))
         {
-
+            //route("R1L1");
+            plan_shovel_patrol_loop();
         }
         delay_20ms(10);
     }

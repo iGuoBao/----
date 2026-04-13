@@ -1,6 +1,7 @@
 #include "GlobalLocalization.h"
 #include "imu901.h"
 #include "usart.h"
+#include "Encoder.h"
 #include <string.h>
 #include <math.h>
 
@@ -18,6 +19,7 @@ static float s_last_mpu_yaw = 0.0f;
 
 // 十字路口检测与对齐
 #define CROSSROAD_BITMAP_ALL_WHITE 0x00
+#define CROSSROAD_BITMAP_MIDDLE5_MASK 0x3E  // bit1~bit5
 #define CROSSROAD_ALIGN_GRID_MM 400
 #define CROSSROAD_YAW_TOLERANCE_DEG 10.0f
 static bool s_crossroad_active = false;
@@ -41,9 +43,8 @@ void GlobalLoc_Init()
     s_pose.y_mm = GLOBAL_INIT_Y_MM;
     s_pose.x_grid = GLOBAL_INIT_X_GRID;
     s_pose.y_grid = GLOBAL_INIT_Y_GRID;
+    s_pose.abs_yaw = GLOBAL_INIT_YAW_DEG;
     s_pose.yaw = 0;
-    s_pose.abs_yaw = attitude.yaw; // 绝对航向初值设为当前 MPU 航向
-    s_pose.yaw = GLOBAL_INIT_YAW_DEG;
 
     // 初始化 yaw 过滤器初值
     s_last_mpu_yaw = s_pose.yaw;
@@ -59,7 +60,7 @@ void GlobalLoc_ResetPose(int32_t x_mm, int32_t y_mm, float yaw_deg)
     s_pose.y_mm = y_mm;
     s_pose.x_grid = x_mm / GLOBAL_GRID_SIZE_MM;
     s_pose.y_grid = y_mm / GLOBAL_GRID_SIZE_MM;
-    s_pose.yaw = normalize_yaw(yaw_deg - s_pose.abs_yaw);
+    s_pose.yaw = yaw_deg;
 }
 
 /**
@@ -83,8 +84,8 @@ void GlobalLoc_Periodic(void)
     // mpu_dmp_get_data(&_pitch, &_roll, &_yaw);
     _pitch = attitude.pitch;
     _roll  = attitude.roll;
-    // _yaw   = normalize_yaw(attitude.yaw - s_pose.abs_yaw); // 转为相对航向
-    _yaw = attitude.yaw;
+    _yaw   = normalize_yaw(attitude.yaw + s_pose.abs_yaw); // 转为相对航向
+    // _yaw = attitude.yaw;
 
     // END 计算小车角度yaw
     
@@ -100,6 +101,7 @@ void GlobalLoc_Periodic(void)
 
     // START 处理七路传感器数据
     s_pose.seven_data = SevenWay_Read();    // 前7位有效数据位置 如果白线则对应位置0 否则为1
+    s_pose.seven_data = seven_ff; // 直接使用全局变量seven_ff，避免调用函数可能带来的延迟和不一致问题
     // END   处理七路传感器数据
 
     // START 更新s_pose
@@ -113,7 +115,8 @@ void GlobalLoc_Periodic(void)
     // }
     // 若变化小于阈值，则保持上次 yaw 不变
 
-    s_pose.yaw = _yaw;  // 直接使用当前计算的相对航向，忽略滤波（如果需要滤波可以改为上面注释的方式）
+    // s_pose.yaw = _yaw;  // 直接使用当前计算的相对航向，忽略滤波（如果需要滤波可以改为上面注释的方式）
+    s_pose.yaw = _yaw;  
     s_pose.pitch = _pitch;
     s_pose.roll  = _roll;
 
@@ -132,7 +135,7 @@ void GlobalLoc_Periodic(void)
     s_pose.y_grid = s_pose.y_mm / GLOBAL_GRID_SIZE_MM;
 
     // 十字路口识别与对齐
-    bool is_crossroad = (s_pose.seven_data == CROSSROAD_BITMAP_ALL_WHITE);
+    bool is_crossroad = ((s_pose.seven_data & CROSSROAD_BITMAP_MIDDLE5_MASK) == CROSSROAD_BITMAP_ALL_WHITE);
     if (is_crossroad && !s_crossroad_active) {
         s_crossroad_active = true;
 

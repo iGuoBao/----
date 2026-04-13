@@ -47,7 +47,7 @@ void Servos_Init(void){
 void Servos_down(int position) {
 #if defined(NEW_SERVO_0)
 	int _pos = SERVO_RETRACT_PWM;
-	sprintf(k,"#000%04dT000%d!\r\n", _pos, position);
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
 	int _pos = SERVO_RETRACT_PWM;
@@ -61,7 +61,7 @@ void Servos_down(int position) {
 void Servos_up(int position) {
 #if defined(NEW_SERVO_0)
 	int _pos = SERVO_LIFT_PWM;
-	sprintf(k,"#000%04dT000%d!\r\n", _pos, position);
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
 	int _pos = SERVO_LIFT_PWM;

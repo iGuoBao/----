@@ -1,0 +1,67 @@
+#ifndef SHOVEL_STRATEGY_H
+#define SHOVEL_STRATEGY_H
+
+#include "main.h"
+#include "astar.h"
+#include "translate_route_cmd.h"
+
+#define SHOVEL_STRATEGY_MAX_PATROL_POINTS 64
+#define SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT 200
+
+typedef enum
+{
+    SHOVEL_STRATEGY_STATE_PATROL = 0,
+    SHOVEL_STRATEGY_STATE_RETURN_SCORE = 1
+} ShovelStrategyState_t;
+
+/**
+ * @brief 初始化铲车策略状态机。
+ */
+void ShovelStrategy_Init(void);
+
+/**
+ * @brief 设置得分区目标栅格点。
+ * @return 1=成功, 0=参数非法
+ */
+uint8_t ShovelStrategy_SetScorePoint(int16_t score_x, int16_t score_y);
+
+/**
+ * @brief 设置巡逻路径点列表（按顺序循环）。
+ * @return 1=成功, 0=参数非法
+ */
+uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count);
+
+/**
+ * @brief 设置巡逻多少圈后回得分区。
+ * @note rounds=0 时会自动按 1 处理。
+ */
+void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds);
+
+/**
+ * @brief 设置非巡逻区附加代价。
+ * @param penalty 0=关闭该功能，推荐范围 20~120
+ */
+void ShovelStrategy_SetNonPatrolPenalty(uint8_t penalty);
+
+/**
+ * @brief 获取当前策略状态。
+ */
+ShovelStrategyState_t ShovelStrategy_GetState(void);
+
+/**
+ * @brief 获取最近一次路径转译状态。
+ */
+TranslateRouteCmd_Status_t ShovelStrategy_GetLastTranslateStatus(void);
+
+/**
+ * @brief 执行一步策略（一次到单个目标点的运行）。
+ * @return 1=成功, 0=失败
+ */
+uint8_t ShovelStrategy_RunOnce(void);
+
+/**
+ * @brief 循环运行策略（阻塞）。
+ */
+void ShovelStrategy_RunLoop(void);
+
+#endif // SHOVEL_STRATEGY_H

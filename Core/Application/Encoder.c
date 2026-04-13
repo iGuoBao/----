@@ -212,7 +212,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         sprintf(k, "X:%4d Y:%4d", pose.x_mm, pose.y_mm);
         OLED_ShowString(0, 0, k, OLED_8X16);
         // 显示航向
-        sprintf(k, "Yaw:%3.2f", pose.yaw);
+        sprintf(k, "Yaw:%06.1f", pose.yaw);
         OLED_ShowString(0, 16, k, OLED_8X16);
         // 显示grid
         sprintf(k, "Grid:%2d,%2d", pose.x_grid, pose.y_grid);
@@ -223,6 +223,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // 显示七路传感器
         sprintf(k, "S:%d", pose.seven_data);
         OLED_ShowString(0, 48, k, OLED_8X16);
+
         OLED_Update();
         prev = z;
     }

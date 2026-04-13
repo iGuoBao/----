@@ -285,6 +285,10 @@ void route(char Road[50])
     uint8_t i = 0;
     while (1)
     {
+        if (Road[i] == '\0')
+        {
+            return;
+        }
 
         switch (Road[i])
         {

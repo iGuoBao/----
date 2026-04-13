@@ -10,11 +10,11 @@
 // 航向角yaw：逆时针为正
 
 // 默认初始位置和朝向
-#define GLOBAL_INIT_X_MM  (int32_t)100  	// 默认x起始位置（毫米）
-#define GLOBAL_INIT_Y_MM  (int32_t)1900  	// 默认y起始位置（毫米）
+#define GLOBAL_INIT_X_MM  (int32_t)180  	// 默认x起始位置（毫米）
+#define GLOBAL_INIT_Y_MM  (int32_t)2000  	// 默认y起始位置（毫米）
 #define GLOBAL_INIT_X_GRID GLOBAL_INIT_X_MM / 400
 #define GLOBAL_INIT_Y_GRID GLOBAL_INIT_Y_MM / 400
-#define GLOBAL_INIT_YAW_DEG  (0.0f) 		// 0度表示出发点方向 逆时针yaw+
+#define GLOBAL_INIT_YAW_DEG  (-90.0f) 		// 0度表示出发点方向 逆时针yaw+
 
 // 地图配置 
 #define GLOBAL_MAP_X_GRID    8 					// 场地x格子数量
