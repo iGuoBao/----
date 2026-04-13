@@ -154,8 +154,9 @@ void plan_shovel_patrol_loop(void)
     };
 
     ShovelStrategy_Init();
-    ShovelStrategy_SetPatrolRoundsBeforeReturn(2);
-    ShovelStrategy_SetNonPatrolPenalty(80);
+    ShovelStrategy_SetPatrolPointsBeforeReturn(2);
+    ShovelStrategy_SetPatrolMinStepDistance(2);
+    ShovelStrategy_SetNonPatrolPenalty(200);
 
     if (!ShovelStrategy_SetScorePoint(5, 1))
     {

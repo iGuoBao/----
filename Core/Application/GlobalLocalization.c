@@ -34,6 +34,19 @@ static float normalize_yaw(float deg)
     return deg;
 }
 
+static int32_t clamp_i32(int32_t value, int32_t min_value, int32_t max_value)
+{
+    if (value < min_value) return min_value;
+    if (value > max_value) return max_value;
+    return value;
+}
+
+static int32_t mm_to_grid_nearest(int32_t mm, int32_t max_grid)
+{
+    int32_t grid = (int32_t)lroundf((float)mm / (float)GLOBAL_GRID_SIZE_MM);
+    return clamp_i32(grid, 0, max_grid);
+}
+
 void GlobalLoc_Init()
 {
     float  _pitch, _roll, _yaw;
@@ -58,8 +71,8 @@ void GlobalLoc_ResetPose(int32_t x_mm, int32_t y_mm, float yaw_deg)
 {
     s_pose.x_mm = x_mm;
     s_pose.y_mm = y_mm;
-    s_pose.x_grid = x_mm / GLOBAL_GRID_SIZE_MM;
-    s_pose.y_grid = y_mm / GLOBAL_GRID_SIZE_MM;
+    s_pose.x_grid = mm_to_grid_nearest(x_mm, GLOBAL_MAP_X_GRID - 1);
+    s_pose.y_grid = mm_to_grid_nearest(y_mm, GLOBAL_MAP_Y_GRID - 1);
     s_pose.yaw = yaw_deg;
 }
 
@@ -130,9 +143,8 @@ void GlobalLoc_Periodic(void)
     s_pose.x_mm += (int32_t)(delta_s_mm * cosf(yaw_rad));
     s_pose.y_mm += (int32_t)(delta_s_mm * sinf(yaw_rad));
 
-    // 更新grid坐标
-    s_pose.x_grid = s_pose.x_mm / GLOBAL_GRID_SIZE_MM;
-    s_pose.y_grid = s_pose.y_mm / GLOBAL_GRID_SIZE_MM;
+    // 不在每个周期用整除更新grid，避免抖动与截断误差。
+    // grid坐标只在十字路口识别后再更新。
 
     // 十字路口识别与对齐
     bool is_crossroad = ((s_pose.seven_data & CROSSROAD_BITMAP_MIDDLE5_MASK) == CROSSROAD_BITMAP_ALL_WHITE);
@@ -165,14 +177,14 @@ void GlobalLoc_Periodic(void)
             s_crossroad_y_mm = aligned_y;
         }
 
-        // 更新grid坐标
-        s_pose.x_grid = s_pose.x_mm / GLOBAL_GRID_SIZE_MM;
-        s_pose.y_grid = s_pose.y_mm / GLOBAL_GRID_SIZE_MM;
+        // 十字路口处更新grid坐标，采用最近格点而非整除截断。
+        s_pose.x_grid = mm_to_grid_nearest(s_pose.x_mm, GLOBAL_MAP_X_GRID - 1);
+        s_pose.y_grid = mm_to_grid_nearest(s_pose.y_mm, GLOBAL_MAP_Y_GRID - 1);
     } else if (!is_crossroad) {
         s_crossroad_active = false;
     }
 
-    // 现在x_mm/y_mm是世界坐标毫米值；x_grid/y_grid已更新
+    // 现在x_mm/y_mm是世界坐标毫米值；x_grid/y_grid仅在十字路口事件时更新
     // END 更新s_pose
 }
 

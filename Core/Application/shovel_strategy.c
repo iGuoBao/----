@@ -8,9 +8,12 @@ typedef struct
 {
     AStar_GridPoint_t patrol_points[SHOVEL_STRATEGY_MAX_PATROL_POINTS];
     uint8_t patrol_count;
-    uint8_t patrol_index;
-    uint8_t patrol_rounds_before_return;
-    uint8_t patrol_rounds_done;
+    uint8_t patrol_points_before_return;
+    uint8_t patrol_points_done_since_return;
+    uint8_t min_patrol_step_distance;
+    int8_t last_patrol_index;
+    uint16_t patrol_visit_count[SHOVEL_STRATEGY_MAX_PATROL_POINTS];
+    uint32_t rng_state;
 
     AStar_GridPoint_t score_point;
     uint8_t score_point_valid;
@@ -25,6 +28,187 @@ static ShovelStrategyContext_t s_ctx;
 static uint8_t is_valid_grid(int16_t x, int16_t y)
 {
     return (x >= 0 && x < ASTAR_MAP_WIDTH && y >= 0 && y < ASTAR_MAP_HEIGHT);
+}
+
+static uint16_t abs_diff_i16(int16_t a, int16_t b)
+{
+    return (a >= b) ? (uint16_t)(a - b) : (uint16_t)(b - a);
+}
+
+static uint16_t patrol_manhattan_distance(uint8_t idx_a, uint8_t idx_b)
+{
+    int16_t ax = (int16_t)s_ctx.patrol_points[idx_a].x;
+    int16_t ay = (int16_t)s_ctx.patrol_points[idx_a].y;
+    int16_t bx = (int16_t)s_ctx.patrol_points[idx_b].x;
+    int16_t by = (int16_t)s_ctx.patrol_points[idx_b].y;
+
+    return (uint16_t)(abs_diff_i16(ax, bx) + abs_diff_i16(ay, by));
+}
+
+static uint32_t rng_next_u32(void)
+{
+    uint32_t x = s_ctx.rng_state;
+
+    if (x == 0)
+    {
+        x = HAL_GetTick() ^ 0x9E3779B9u;
+        if (x == 0)
+        {
+            x = 0xA341316Cu;
+        }
+    }
+
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+
+    s_ctx.rng_state = x;
+    return x;
+}
+
+static uint32_t rng_next_bounded(uint32_t upper_exclusive)
+{
+    if (upper_exclusive == 0)
+    {
+        return 0;
+    }
+
+    return rng_next_u32() % upper_exclusive;
+}
+
+static uint32_t compute_candidate_weight(uint8_t idx, uint16_t max_visit, uint32_t noise_seed)
+{
+    uint16_t visits = s_ctx.patrol_visit_count[idx];
+    uint16_t hunger = (uint16_t)(max_visit - visits + 1U);
+    uint32_t weight = 1U + (uint32_t)hunger * 16U;
+
+    if (s_ctx.last_patrol_index >= 0)
+    {
+        uint16_t dist = patrol_manhattan_distance((uint8_t)s_ctx.last_patrol_index, idx);
+        weight += (uint32_t)dist * 4U;
+        if (dist >= s_ctx.min_patrol_step_distance)
+        {
+            weight += 16U;
+        }
+    }
+
+    {
+        uint32_t mixed = noise_seed ^ ((uint32_t)idx * 1103515245u);
+        mixed ^= mixed >> 16;
+        weight += (mixed & 0x0FU);
+    }
+
+    return weight;
+}
+
+static uint8_t is_candidate_allowed(uint8_t idx,
+                                    uint8_t pass,
+                                    uint16_t min_visit,
+                                    uint8_t starvation_window)
+{
+    if (s_ctx.patrol_count > 1 && s_ctx.last_patrol_index >= 0 && idx == (uint8_t)s_ctx.last_patrol_index)
+    {
+        if (pass <= 2)
+        {
+            return 0;
+        }
+    }
+
+    if (pass <= 1)
+    {
+        if (s_ctx.patrol_visit_count[idx] > (uint16_t)(min_visit + starvation_window))
+        {
+            return 0;
+        }
+    }
+
+    if (pass == 0 && s_ctx.last_patrol_index >= 0)
+    {
+        uint16_t dist = patrol_manhattan_distance((uint8_t)s_ctx.last_patrol_index, idx);
+        if (dist < s_ctx.min_patrol_step_distance)
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int16_t select_next_patrol_index(void)
+{
+    uint16_t min_visit = 0xFFFFu;
+    uint16_t max_visit = 0u;
+
+    if (s_ctx.patrol_count == 0)
+    {
+        return -1;
+    }
+
+    if (s_ctx.patrol_count == 1)
+    {
+        return 0;
+    }
+
+    for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
+    {
+        uint16_t visits = s_ctx.patrol_visit_count[i];
+        if (visits < min_visit)
+        {
+            min_visit = visits;
+        }
+        if (visits > max_visit)
+        {
+            max_visit = visits;
+        }
+    }
+
+    {
+        uint8_t starvation_window = (max_visit > (uint16_t)(min_visit + 1U)) ? 0U : 1U;
+
+        for (uint8_t pass = 0; pass < 4; pass++)
+        {
+            uint32_t total_weight = 0;
+            uint32_t noise_seed = rng_next_u32();
+
+            for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
+            {
+                if (!is_candidate_allowed(i, pass, min_visit, starvation_window))
+                {
+                    continue;
+                }
+
+                total_weight += compute_candidate_weight(i, max_visit, noise_seed);
+            }
+
+            if (total_weight == 0)
+            {
+                continue;
+            }
+
+            {
+                uint32_t pick = rng_next_bounded(total_weight);
+
+                for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
+                {
+                    uint32_t weight;
+                    if (!is_candidate_allowed(i, pass, min_visit, starvation_window))
+                    {
+                        continue;
+                    }
+
+                    weight = compute_candidate_weight(i, max_visit, noise_seed);
+
+                    if (pick < weight)
+                    {
+                        return (int16_t)i;
+                    }
+                    pick -= weight;
+                }
+            }
+        }
+    }
+
+    return 0;
 }
 
 static uint8_t is_preferred_grid(int16_t x, int16_t y)
@@ -109,7 +293,14 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
     {
         return 1;
     }
-
+    // debug 第一行显示目标点 第二行显示转译的命令
+    char debug_line[50];
+    sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
+    OLED_ShowString(0, 0, debug_line, OLED_8X16);
+    sprintf(debug_line, "%s", cmd);
+    OLED_ShowString(0, 16, debug_line, OLED_8X16);
+    OLED_Update();
+    delay_20ms(50);
     route(cmd);
     return 1;
 }
@@ -117,7 +308,14 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 void ShovelStrategy_Init(void)
 {
     memset(&s_ctx, 0, sizeof(s_ctx));
-    s_ctx.patrol_rounds_before_return = 2;
+    s_ctx.patrol_points_before_return = 2;
+    s_ctx.min_patrol_step_distance = SHOVEL_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
+    s_ctx.last_patrol_index = -1;
+    s_ctx.rng_state = HAL_GetTick() ^ 0x9E3779B9u;
+    if (s_ctx.rng_state == 0)
+    {
+        s_ctx.rng_state = 0xA341316Cu;
+    }
     s_ctx.non_patrol_penalty = SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
     s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
     s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_OK;
@@ -154,20 +352,31 @@ uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t 
     }
 
     s_ctx.patrol_count = count;
-    s_ctx.patrol_index = 0;
-    s_ctx.patrol_rounds_done = 0;
+    memset(s_ctx.patrol_visit_count, 0, sizeof(s_ctx.patrol_visit_count));
+    s_ctx.last_patrol_index = -1;
+    s_ctx.patrol_points_done_since_return = 0;
     s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
     return 1;
 }
 
-void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
+void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
 {
-    if (rounds == 0)
+    if (points == 0)
     {
-        rounds = 1;
+        points = 1;
     }
 
-    s_ctx.patrol_rounds_before_return = rounds;
+    s_ctx.patrol_points_before_return = points;
+}
+
+void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
+{
+    ShovelStrategy_SetPatrolPointsBeforeReturn(rounds);
+}
+
+void ShovelStrategy_SetPatrolMinStepDistance(uint8_t min_distance)
+{
+    s_ctx.min_patrol_step_distance = min_distance;
 }
 
 void ShovelStrategy_SetNonPatrolPenalty(uint8_t penalty)
@@ -187,6 +396,8 @@ TranslateRouteCmd_Status_t ShovelStrategy_GetLastTranslateStatus(void)
 
 uint8_t ShovelStrategy_RunOnce(void)
 {
+    int16_t next_index;
+
     if (!s_ctx.score_point_valid || s_ctx.patrol_count == 0)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
@@ -195,21 +406,32 @@ uint8_t ShovelStrategy_RunOnce(void)
 
     if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
     {
-        if (!execute_to_goal(s_ctx.patrol_points[s_ctx.patrol_index]))
+        next_index = select_next_patrol_index();
+        if (next_index < 0 || next_index >= s_ctx.patrol_count)
+        {
+            s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+            return 0;
+        }
+
+        if (!execute_to_goal(s_ctx.patrol_points[next_index]))
         {
             return 0;
         }
 
-        s_ctx.patrol_index++;
-        if (s_ctx.patrol_index >= s_ctx.patrol_count)
+        s_ctx.last_patrol_index = (int8_t)next_index;
+        if (s_ctx.patrol_visit_count[next_index] < 0xFFFFu)
         {
-            s_ctx.patrol_index = 0;
-            s_ctx.patrol_rounds_done++;
+            s_ctx.patrol_visit_count[next_index]++;
+        }
 
-            if (s_ctx.patrol_rounds_done >= s_ctx.patrol_rounds_before_return)
-            {
-                s_ctx.state = SHOVEL_STRATEGY_STATE_RETURN_SCORE;
-            }
+        if (s_ctx.patrol_points_done_since_return < 0xFFu)
+        {
+            s_ctx.patrol_points_done_since_return++;
+        }
+
+        if (s_ctx.patrol_points_done_since_return >= s_ctx.patrol_points_before_return)
+        {
+            s_ctx.state = SHOVEL_STRATEGY_STATE_RETURN_SCORE;
         }
 
         return 1;
@@ -220,7 +442,8 @@ uint8_t ShovelStrategy_RunOnce(void)
         return 0;
     }
 
-    s_ctx.patrol_rounds_done = 0;
+    s_ctx.patrol_points_done_since_return = 0;
+    s_ctx.last_patrol_index = -1;
     s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
     return 1;
 }
@@ -239,3 +462,4 @@ void ShovelStrategy_RunLoop(void)
         delay_20ms(2);
     }
 }
+

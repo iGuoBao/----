@@ -692,4 +692,43 @@ static void AStar_SetStaticObstacles(void)
     AStar_SetEdgeBlockedTo(2, 4, 1, 4, 1);
     AStar_SetEdgeBlockedTo(2, 4, 3, 4, 1);
     AStar_SetEdgeBlockedTo(3, 4, 2, 4, 1);
+    AStar_SetEdgeBlockedTo(7, 4, 6, 4, 1);
+    AStar_SetEdgeBlockedTo(6, 4, 7, 4, 1);
+    AStar_SetEdgeBlockedTo(6, 4, 5, 4, 1);
+    AStar_SetEdgeBlockedTo(5, 4, 6, 4, 1);// 启动坡道右侧
+    AStar_SetEdgeBlockedTo(1, 6, 2, 6, 1);
+    AStar_SetEdgeBlockedTo(2, 6, 1, 6, 1);
+    AStar_SetEdgeBlockedTo(2, 6, 3, 6, 1);
+    AStar_SetEdgeBlockedTo(3, 6, 2, 6, 1);
+    AStar_SetEdgeBlockedTo(7, 6, 6, 6, 1);
+    AStar_SetEdgeBlockedTo(6, 6, 7, 6, 1);
+    AStar_SetEdgeBlockedTo(6, 6, 5, 6, 1);
+    AStar_SetEdgeBlockedTo(5, 6, 6, 6, 1);// 启动坡道左侧
+
+    AStar_SetObstacle(0,1);
+    AStar_SetObstacle(0,2);
+    AStar_SetObstacle(0,3);
+    AStar_SetObstacle(0,4);
+    AStar_SetObstacle(0,5);
+    AStar_SetObstacle(0,6);
+    AStar_SetObstacle(0,7);
+    AStar_SetObstacle(0,8);
+    AStar_SetObstacle(0,9);
+    AStar_SetObstacle(0,10);
+    AStar_SetObstacle(1,0);
+    AStar_SetObstacle(2,0);
+    AStar_SetObstacle(3,0);
+    AStar_SetObstacle(4,0);
+    AStar_SetObstacle(5,0);
+    AStar_SetObstacle(6,0);
+    AStar_SetObstacle(7,0);
+    AStar_SetObstacle(8,0);
+    AStar_SetObstacle(2,1);
+    AStar_SetObstacle(2,9);
+    AStar_SetObstacle(4,1);
+    AStar_SetObstacle(4,9);
+    AStar_SetObstacle(6,1);
+    AStar_SetObstacle(6,9);
+    AStar_SetObstacle(4,5);
+
 }

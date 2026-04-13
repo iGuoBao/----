@@ -126,7 +126,7 @@
 // END 循迹速度设置
 
 // START MPU6050转向PID参数
-#define MPU6050_TURN_P 1.90f
+#define MPU6050_TURN_P 2.20f
 #define MPU6050_TURN_I 0.3f
 #define MPU6050_TURN_D 0.2f
 #define MPU6050_TURN_MAX_OUTPUT 85

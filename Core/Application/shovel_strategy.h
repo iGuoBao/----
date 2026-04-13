@@ -6,7 +6,8 @@
 #include "translate_route_cmd.h"
 
 #define SHOVEL_STRATEGY_MAX_PATROL_POINTS 64
-#define SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT 200
+#define SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT 50
+#define SHOVEL_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT 2
 
 typedef enum
 {
@@ -32,10 +33,21 @@ uint8_t ShovelStrategy_SetScorePoint(int16_t score_x, int16_t score_y);
 uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count);
 
 /**
- * @brief 设置巡逻多少圈后回得分区。
- * @note rounds=0 时会自动按 1 处理。
+ * @brief 设置每巡逻多少个点后回得分区。
+ * @note points=0 时会自动按 1 处理。
+ */
+void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points);
+
+/**
+ * @brief 兼容旧接口：语义等同于 ShovelStrategy_SetPatrolPointsBeforeReturn。
  */
 void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds);
+
+/**
+ * @brief 设置巡逻点最小步进距离（曼哈顿距离）。
+ * @note 算法会尽量满足该距离；若无可选点会自动放宽约束。
+ */
+void ShovelStrategy_SetPatrolMinStepDistance(uint8_t min_distance);
 
 /**
  * @brief 设置非巡逻区附加代价。
