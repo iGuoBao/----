@@ -278,10 +278,24 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
     apply_non_patrol_penalty(map);
 
     memset(cmd, 0, sizeof(cmd));
-    s_ctx.last_translate_status = TranslateRouteCmd_GenerateToGoal((int16_t)goal.x,
-                                                                   (int16_t)goal.y,
-                                                                   cmd,
-                                                                   (uint16_t)sizeof(cmd));
+    // 如果巡逻点
+    if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+    {
+        s_ctx.last_translate_status = TranslateRouteCmd_GenerateToGoalWithIntent((int16_t)goal.x,
+                                                                      (int16_t)goal.y,
+                                                                      TRANSLATE_ROUTE_INTENT_NONE,
+                                                                      cmd,
+                                                                      sizeof(cmd));
+    }
+    else
+    {
+        // 就带尾巴  放方块
+        s_ctx.last_translate_status = TranslateRouteCmd_GenerateToGoalWithIntent((int16_t)goal.x,
+                                                                      (int16_t)goal.y,
+                                                                      TRANSLATE_ROUTE_INTENT_PLACE_CUBE,
+                                                                      cmd,
+                                                                      sizeof(cmd));
+    }
     memcpy(map->grid, grid_backup, sizeof(grid_backup));
 
     if (s_ctx.last_translate_status != TRANSLATE_ROUTE_CMD_OK)

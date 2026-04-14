@@ -233,7 +233,7 @@ static TranslateRouteCmd_Status_t append_intent_tail(char *out_cmd,
         tail = "tfObd";
         break;
     case TRANSLATE_ROUTE_INTENT_PLACE_CUBE:
-        tail = "O";
+        tail = "Op";
         break;
     default:
         return TRANSLATE_ROUTE_CMD_ERR_PARAM;

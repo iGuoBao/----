@@ -377,6 +377,12 @@ void route(char Road[50])
                 mpu6050_pid_control(0, target_angle);
             }
             break;
+        case 'p':
+            forward_delay(75, 40);
+            delay_20ms(30);
+            turn_left();
+             forward_delay(75, -40);
+            break;
         default:
             break;
         }
