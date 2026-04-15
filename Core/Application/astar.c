@@ -16,6 +16,7 @@
 /* ==================== 私有宏定义 ==================== */
 #define FLAG_IN_OPEN_LIST   0x01
 #define FLAG_IN_CLOSED_LIST 0x02
+#define ASTAR_COST_TURN     2.0f
 
 /* ==================== 私有变量 ==================== */
 static AStar_Map_t s_map;                           // 全局地图
@@ -314,10 +315,25 @@ uint8_t AStar_FindPath(AStar_GridPoint_t start_grid, AStar_GridPoint_t goal_grid
             
             // 计算移动代价（只有直线4方向）
             float move_cost = ASTAR_COST_STRAIGHT;
+            float turn_penalty = 0.0f;
+
+            if (s_map.nodes[current.y][current.x].parent_x >= 0 &&
+                s_map.nodes[current.y][current.x].parent_y >= 0)
+            {
+                int16_t prev_dx = current.x - s_map.nodes[current.y][current.x].parent_x;
+                int16_t prev_dy = current.y - s_map.nodes[current.y][current.x].parent_y;
+                int16_t step_dx = nx - current.x;
+                int16_t step_dy = ny - current.y;
+
+                if (prev_dx != step_dx || prev_dy != step_dy)
+                {
+                    turn_penalty = ASTAR_COST_TURN;
+                }
+            }
             
             // 添加格子本身的代价（墙体惩罚）
             float grid_cost_weight = s_map.grid[ny][nx] / 10.0f;  // 将代价转换为权重系数
-            float tentative_g = s_map.nodes[current.y][current.x].g + move_cost + grid_cost_weight;
+            float tentative_g = s_map.nodes[current.y][current.x].g + move_cost + grid_cost_weight + turn_penalty;
             
             // 如果找到更好的路径
             if (tentative_g < s_map.nodes[ny][nx].g) {

@@ -1,6 +1,7 @@
 #include "shovel_strategy.h"
 
 #include "action.h"
+#include "GlobalLocalization.h"
 
 #include <string.h>
 
@@ -12,7 +13,6 @@ typedef struct
     uint8_t patrol_points_done_since_return;
     uint8_t min_patrol_step_distance;
     int8_t last_patrol_index;
-    uint16_t patrol_visit_count[SHOVEL_STRATEGY_MAX_PATROL_POINTS];
     uint32_t rng_state;
 
     AStar_GridPoint_t score_point;
@@ -76,68 +76,41 @@ static uint32_t rng_next_bounded(uint32_t upper_exclusive)
     return rng_next_u32() % upper_exclusive;
 }
 
-static uint32_t compute_candidate_weight(uint8_t idx, uint16_t max_visit, uint32_t noise_seed)
+static void mix_rng_entropy(void)
 {
-    uint16_t visits = s_ctx.patrol_visit_count[idx];
-    uint16_t hunger = (uint16_t)(max_visit - visits + 1U);
-    uint32_t weight = 1U + (uint32_t)hunger * 16U;
+    GlobalPose_t pose = GlobalLoc_GetPose();
+    int32_t yaw10 = (int32_t)(pose.yaw * 10.0f);
+    uint32_t mix = 0;
 
-    if (s_ctx.last_patrol_index >= 0)
+    mix ^= (uint32_t)HAL_GetTick();
+    mix ^= (uint32_t)SysTick->VAL;
+    mix ^= (uint32_t)pose.x_mm;
+    mix ^= ((uint32_t)pose.y_mm << 11) | ((uint32_t)pose.y_mm >> 21);
+    mix ^= ((uint32_t)yaw10 << 7) | ((uint32_t)yaw10 >> 25);
+    mix ^= 0x9E3779B9u;
+
+    s_ctx.rng_state ^= mix;
+
+    if (s_ctx.rng_state == 0)
     {
-        uint16_t dist = patrol_manhattan_distance((uint8_t)s_ctx.last_patrol_index, idx);
-        weight += (uint32_t)dist * 4U;
-        if (dist >= s_ctx.min_patrol_step_distance)
-        {
-            weight += 16U;
-        }
+        s_ctx.rng_state = 0xA341316Cu;
     }
-
-    {
-        uint32_t mixed = noise_seed ^ ((uint32_t)idx * 1103515245u);
-        mixed ^= mixed >> 16;
-        weight += (mixed & 0x0FU);
-    }
-
-    return weight;
 }
 
-static uint8_t is_candidate_allowed(uint8_t idx,
-                                    uint8_t pass,
-                                    uint16_t min_visit,
-                                    uint8_t starvation_window)
+static uint8_t is_candidate_far_enough(uint8_t idx)
 {
-    if (s_ctx.patrol_count > 1 && s_ctx.last_patrol_index >= 0 && idx == (uint8_t)s_ctx.last_patrol_index)
+    if (s_ctx.last_patrol_index < 0 || s_ctx.min_patrol_step_distance == 0)
     {
-        if (pass <= 2)
-        {
-            return 0;
-        }
+        return 1;
     }
 
-    if (pass <= 1)
-    {
-        if (s_ctx.patrol_visit_count[idx] > (uint16_t)(min_visit + starvation_window))
-        {
-            return 0;
-        }
-    }
-
-    if (pass == 0 && s_ctx.last_patrol_index >= 0)
-    {
-        uint16_t dist = patrol_manhattan_distance((uint8_t)s_ctx.last_patrol_index, idx);
-        if (dist < s_ctx.min_patrol_step_distance)
-        {
-            return 0;
-        }
-    }
-
-    return 1;
+    return (patrol_manhattan_distance((uint8_t)s_ctx.last_patrol_index, idx) >=
+            (uint16_t)s_ctx.min_patrol_step_distance);
 }
 
 static int16_t select_next_patrol_index(void)
 {
-    uint16_t min_visit = 0xFFFFu;
-    uint16_t max_visit = 0u;
+    uint8_t fallback_idx = 0xFFu;
 
     if (s_ctx.patrol_count == 0)
     {
@@ -149,66 +122,41 @@ static int16_t select_next_patrol_index(void)
         return 0;
     }
 
-    for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
+    mix_rng_entropy();
+
+    for (uint8_t attempts = 0; attempts < (uint8_t)(s_ctx.patrol_count * 2U); attempts++)
     {
-        uint16_t visits = s_ctx.patrol_visit_count[i];
-        if (visits < min_visit)
+        uint8_t idx = (uint8_t)rng_next_bounded(s_ctx.patrol_count);
+
+        if (s_ctx.last_patrol_index >= 0 && idx == (uint8_t)s_ctx.last_patrol_index)
         {
-            min_visit = visits;
+            continue;
         }
-        if (visits > max_visit)
+
+        if (is_candidate_far_enough(idx))
         {
-            max_visit = visits;
+            return (int16_t)idx;
+        }
+
+        if (fallback_idx == 0xFFu)
+        {
+            fallback_idx = idx;
         }
     }
 
+    if (fallback_idx != 0xFFu)
     {
-        uint8_t starvation_window = (max_visit > (uint16_t)(min_visit + 1U)) ? 0U : 1U;
-
-        for (uint8_t pass = 0; pass < 4; pass++)
-        {
-            uint32_t total_weight = 0;
-            uint32_t noise_seed = rng_next_u32();
-
-            for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
-            {
-                if (!is_candidate_allowed(i, pass, min_visit, starvation_window))
-                {
-                    continue;
-                }
-
-                total_weight += compute_candidate_weight(i, max_visit, noise_seed);
-            }
-
-            if (total_weight == 0)
-            {
-                continue;
-            }
-
-            {
-                uint32_t pick = rng_next_bounded(total_weight);
-
-                for (uint8_t i = 0; i < s_ctx.patrol_count; i++)
-                {
-                    uint32_t weight;
-                    if (!is_candidate_allowed(i, pass, min_visit, starvation_window))
-                    {
-                        continue;
-                    }
-
-                    weight = compute_candidate_weight(i, max_visit, noise_seed);
-
-                    if (pick < weight)
-                    {
-                        return (int16_t)i;
-                    }
-                    pick -= weight;
-                }
-            }
-        }
+        return (int16_t)fallback_idx;
     }
 
-    return 0;
+    {
+        uint8_t idx = (uint8_t)rng_next_bounded(s_ctx.patrol_count);
+        if (s_ctx.last_patrol_index >= 0 && idx == (uint8_t)s_ctx.last_patrol_index)
+        {
+            idx = (uint8_t)((idx + 1U) % s_ctx.patrol_count);
+        }
+        return (int16_t)idx;
+    }
 }
 
 static uint8_t is_preferred_grid(int16_t x, int16_t y)
@@ -346,7 +294,7 @@ void ShovelStrategy_Init(void)
     s_ctx.patrol_points_before_return = 2;
     s_ctx.min_patrol_step_distance = SHOVEL_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
     s_ctx.last_patrol_index = -1;
-    s_ctx.rng_state = HAL_GetTick() ^ 0x9E3779B9u;
+    s_ctx.rng_state = HAL_GetTick() ^ SysTick->VAL ^ 0x9E3779B9u;
     if (s_ctx.rng_state == 0)
     {
         s_ctx.rng_state = 0xA341316Cu;
@@ -387,7 +335,6 @@ uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t 
     }
 
     s_ctx.patrol_count = count;
-    memset(s_ctx.patrol_visit_count, 0, sizeof(s_ctx.patrol_visit_count));
     s_ctx.last_patrol_index = -1;
     s_ctx.patrol_points_done_since_return = 0;
     s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
@@ -454,10 +401,6 @@ uint8_t ShovelStrategy_RunOnce(void)
         }
 
         s_ctx.last_patrol_index = (int8_t)next_index;
-        if (s_ctx.patrol_visit_count[next_index] < 0xFFFFu)
-        {
-            s_ctx.patrol_visit_count[next_index]++;
-        }
 
         if (s_ctx.patrol_points_done_since_return < 0xFFu)
         {
