@@ -283,7 +283,12 @@ void back(int len)
 void route(char Road[50])
 {
     uint8_t i = 0;
-    while (1)
+    if (Road == NULL)
+    {
+        return;
+    }
+
+    while (i < 49)
     {
         if (Road[i] == '\0')
         {
@@ -380,8 +385,7 @@ void route(char Road[50])
         case 'p':
             forward_delay(75, 40);
             delay_20ms(30);
-            turn_left();
-             forward_delay(75, -40);
+            forward_delay(90, -40);
             break;
         default:
             break;

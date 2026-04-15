@@ -265,8 +265,10 @@ static void apply_non_patrol_penalty(AStar_Map_t *map)
 static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 {
     char cmd[50];
+    char route_cmd[50];
     AStar_Map_t *map = AStar_GetMap();
     uint8_t grid_backup[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
+    uint16_t cmd_len = 0;
 
     if (map == NULL)
     {
@@ -307,15 +309,34 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
     {
         return 1;
     }
+
+    while (cmd_len < (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
+    {
+        cmd_len++;
+    }
+
+    if (cmd_len >= (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
+    {
+        s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_BUFFER;
+        return 0;
+    }
+
+    memset(route_cmd, 0, sizeof(route_cmd));
+    memcpy(route_cmd, cmd, cmd_len);
+    route_cmd[cmd_len] = '\0';
+
     // debug 第一行显示目标点 第二行显示转译的命令
     char debug_line[50];
+    OLED_ClearArea(0, 0, 128, 16);
     sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
     OLED_ShowString(0, 0, debug_line, OLED_8X16);
-    sprintf(debug_line, "%s", cmd);
+    OLED_ClearArea(0, 16, 128, 16);
+    memset(debug_line, 0, sizeof(debug_line));
+    sprintf(debug_line, "%s", route_cmd);
     OLED_ShowString(0, 16, debug_line, OLED_8X16);
     OLED_Update();
     delay_20ms(50);
-    route(cmd);
+    route(route_cmd);
     return 1;
 }
 
