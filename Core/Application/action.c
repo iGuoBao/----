@@ -334,16 +334,16 @@ void route(char Road[50])
             turn_around();
             break;
         case 'T':
-            Servos_up(1);
+            Servos_up(SERVO_DT_TIME);
             break;
         case 't':
-            Servos_up(2);
+            Servos_up(SERVO_dt_TIME);
             break;
         case 'd':
-            Servos_down(2); // 0004
+            Servos_down(SERVO_dt_TIME); // 0004
             break;
         case 'D':
-            Servos_down(1); // 0004
+            Servos_down(SERVO_DT_TIME); // 0004
             break;
         case 'H':
             Servos_close(1800);
@@ -355,7 +355,6 @@ void route(char Road[50])
             Servos_open(SERVO_OPEN_PWM);
             break;
         case 'Z':
-            Servos_up(SERVO_STOP_PWM);
             char buf_temp[20];
             sprintf(buf_temp, "#000PDST\r\n");
             HAL_UART_Transmit_IT(&huart1, (uint8_t *)buf_temp, strlen(buf_temp));

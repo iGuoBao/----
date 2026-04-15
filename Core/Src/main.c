@@ -124,7 +124,6 @@ int main(void)
     AStar_Init();
     TranslateRouteCmd_SetSpecialEdgeRules();
 
-
     static char test_s[100] = {'T', 'w', 'w', 'D', 'w', 'w', 'w', 'w', 'T', 'S'}; // 测试用
     // static char test_s[100] = {'d','t','D','T'}; //测试用
     static char te1[100] = {
@@ -152,6 +151,23 @@ int main(void)
     /*物块八分*/ static char test3[100] = {'O', '1', 'R', '1', 'L', '2', 'L', '1', 'R', '2', 'K', 'R', 'O', '3', 'A', 'w', '8', 'A', '1', 'R', '2', 'K', 'A', '2', 'L', '1', 'O', 'B', 'A', '2', 'L', '2', 'L', '2', 'K', 'A', '2', 'R', '2', 'R', '2', 'O', 'A', '3', 'R', '1', 'K', 'A', '1', 'R', '5', 'O', 'A', '1', 'L', '2', 'K', 'A', '2', 'R', '1', 'O', 'S'}; // 方块八分960
                                                                                                                                                                                                                                                                                                                                                                        // static char test4[100] = {'D','w','w','D','R','1','R','7','S'};
     /*完胜*/ static char test5[100] = {'O', '1', 'L', '2', 'R', '1', 'K', '2', 'L', 'T', 'w', 'f', 'w', 'O', 'B', 'D', 'w', 'A', '1', 'K', 'T', 'w', 'L', 'L', '1', 'w', 'f', 'w', 'O', 'S', 'B', 'D', 'w', 'A', '1', 'L', '1', 'R', '6', 'w', 'f', 'w', 'b', 'L', 'L', '1', 'R', '1', 'K', 't', 'w', 'R', 'f', 'w', 'O', 'B', 'w', 'd', 'w', 'w', 'A', '1', 'L', '2', 'K', 't', 'w', 'w', 'A', '2', 'R', '1', 'f', 'w', 'O', 'S'};
+// 基地车
+#ifdef BASE_CAR_3_4
+    while (1)
+    {
+        if (Button_IsPressed(BUTTON_PC0))
+        {
+            motor_speed_set(91, 68); // 155   120
+            delay_20ms(62);
+            motor_speed_set(-7, -5);
+            delay_20ms(300);
+            motor_speed_set(0, 0);
+            while (1);
+        }
+           
+    }
+
+#endif
 
     while (1)
     {
@@ -178,15 +194,18 @@ int main(void)
         }
         else if (Button_IsPressed(BUTTON_PC2))
         {
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
             route("R1L1");
             delay_20ms(50);
             GlobalLoc_ResetPose(400, 1200, 0);
             plan_shovel_patrol_loop();
-        
         }
         else if (Button_IsPressed(BUTTON_PC3))
         {
-            //route("R1L1");
+            // route("R1L1");
             plan_shovel_patrol_loop();
         }
         delay_20ms(10);

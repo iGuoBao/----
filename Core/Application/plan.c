@@ -59,8 +59,15 @@ void plan_b()
  */
 void plan_4_a()
 {
+    // 5s
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+
     // 在左侧对方区域满分环
-    route("wwwOdf1L1K2R1L1RtwfObd");
+    route("wwwOdwwf1L1K2R1L1RtwfObd");
     // 去待机区
     route("Rbw");
     // 在待机区等待
@@ -80,10 +87,19 @@ void plan_4_a()
 
 void plan_4_b()
 {
+    // 7s
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+
     // 在右侧对方区域阻碍对方满分
     route("f1R1ww1KL1R1AbO");
     // 等待100s
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 8; i++)
     {
         delay_20ms(50);
     }
