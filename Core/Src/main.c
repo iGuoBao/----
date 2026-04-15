@@ -157,8 +157,35 @@ int main(void)
     {
         if (Button_IsPressed(BUTTON_PC0))
         {
-            motor_speed_set(91, 68); // 155   120
-            delay_20ms(62);
+            motor_speed_set(98, 62); // 155   120
+            delay_20ms(58);
+            motor_speed_set(-7, -5);
+            delay_20ms(300);
+            motor_speed_set(0, 0);
+            while (1);
+        }
+        else if (Button_IsPressed(BUTTON_PC1))
+        {
+            motor_speed_set(98, 0); // 155   120
+            delay_20ms(55);
+            motor_speed_set(-7, -5);
+            delay_20ms(300);
+            motor_speed_set(0, 0);
+            while (1);
+        }
+        else if (Button_IsPressed(BUTTON_PC2))
+        {
+            motor_speed_set(98, 62); // 155   120
+            delay_20ms(55);
+            motor_speed_set(-7, -5);
+            delay_20ms(300);
+            motor_speed_set(0, 0);
+            while (1);
+        }
+        else if (Button_IsPressed(BUTTON_PC3))
+        {
+            motor_speed_set(98, 62); // 155   120
+            delay_20ms(55);
             motor_speed_set(-7, -5);
             delay_20ms(300);
             motor_speed_set(0, 0);
@@ -194,11 +221,13 @@ int main(void)
         }
         else if (Button_IsPressed(BUTTON_PC2))
         {
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
             route("R1L1");
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
+            delay_20ms(50);
             delay_20ms(50);
             GlobalLoc_ResetPose(400, 1200, 0);
             plan_shovel_patrol_loop();

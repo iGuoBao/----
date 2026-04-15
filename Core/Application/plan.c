@@ -19,7 +19,7 @@ void plan_a()
         delay_20ms(50);
     }
     // 推走方块 然后回去
-    route("2bw");
+    route("2wwbw");
     
     // 尝试右侧拿走2分
     // route("TRfDKtbK");
@@ -43,7 +43,7 @@ void plan_b()
         delay_20ms(50);
     }
     // 推走方块 然后回去
-    route("2bw");
+    route("2wwbbw1");
     // 尝试右侧抓走对方满分环
     // route("T1RfDKTbO");
     route("tRwwwfODwKTwwwbwOww");
@@ -59,7 +59,8 @@ void plan_b()
  */
 void plan_4_a()
 {
-    // 5s
+
+    delay_20ms(50);
     delay_20ms(50);
     delay_20ms(50);
     delay_20ms(50);
@@ -67,7 +68,7 @@ void plan_4_a()
     delay_20ms(50);
 
     // 在左侧对方区域满分环
-    route("wwwOdwwf1L1K2R1L1RtwfObd");
+    route("wwOwdwf1L1Kw2R1L1RtwwwfObd");
     // 去待机区
     route("Rbw");
     // 在待机区等待
@@ -76,19 +77,18 @@ void plan_4_a()
         delay_20ms(50);
     }
     // 推走方块 然后回去
-    route("2bw");
+    route("2wwbbw1");
     
     // 尝试右侧拿走2分
     // route("TRfDKtbK");
-    route("tRwwwfODwwKTwwwbwOdww");
+    route("tRwwwfODwwwwwKTwwwbwODww");
 
     route("S");
 }
 
 void plan_4_b()
 {
-    // 7s
-    delay_20ms(50);
+
     delay_20ms(50);
     delay_20ms(50);
     delay_20ms(50);
@@ -104,7 +104,7 @@ void plan_4_b()
         delay_20ms(50);
     }
     // 推走方块 然后回去
-    route("2bw");
+    route("2wwbw");
     // 尝试右侧抓走对方满分环
     // route("T1RfDKTbO");
     route("tRwwwfODwKTwwwbwOww");

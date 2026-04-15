@@ -36,8 +36,8 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 80
-#define LOW_SPEED_LAST_2 90
+#define LOW_SPEED_LAST_1 75
+#define LOW_SPEED_LAST_2 75
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置
@@ -68,19 +68,19 @@
 // END 小车基础物理参数
 
 // START 舵机参数
-#define SERVO_OPEN_PWM      1000  // 爪子开 pwm
+#define SERVO_OPEN_PWM      1040  // 爪子开 pwm
 #define SERVO_CLOSE_PWM     1700 // 爪子关 pwm
 
-#define SERVO_LIFT_PWM      2249  // 升降升 pwm
-#define SERVO_RETRACT_PWM   914  // 升降降 pwm
+#define SERVO_LIFT_PWM      2049  // 升降升 pwm
+#define SERVO_RETRACT_PWM   944  // 升降降 pwm
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_dt_TIME    4 // d 正常的升降 时间
 #define SERVO_DT_TIME    2 // D 正常的升降 时间
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 80
-#define LOW_SPEED_LAST_2 80
+#define LOW_SPEED_LAST_1 60
+#define LOW_SPEED_LAST_2 60
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置
@@ -95,7 +95,7 @@
 
 // START 后退参数
 #define BACKWARD_SPEED -44
-#define BACKWARD_TIME_20ms 83
+#define BACKWARD_TIME_20ms 79
 // END 后退参数
 
 #elif defined(FORK_CAR_3_3)
