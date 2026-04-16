@@ -2,10 +2,7 @@
 #include "action.h"
 #include "shovel_strategy.h"
 
-/**
- * @brief 策略 到右侧对方区域阻碍对方满分，等待100s，推走方块 然后回去，尝试右侧抓走对方满分环，尝试右侧拿走2分
- *         4车策略
- */
+// 去左侧的
 void plan_4_a()
 {
     delay_20ms(50);
@@ -48,6 +45,7 @@ void plan_4_a()
     route("S");
 }
 
+// 去右侧的
 void plan_4_b()
 {
     delay_20ms(50);
@@ -60,9 +58,13 @@ void plan_4_b()
     route("A");
     // 特调 下基地车
     forward(-1);
-    // 特调下坡
-    route("L");
-    forward_delay(100,50);
+    // 特调下坡 变速
+    // route("L");
+    // forward_delay(100,50);
+    // 特调下坡 直接倒车
+    route("R");
+    forward(-1);
+    route("A");
 
     // 去对方得分区
     route("1L1R1AbO");
