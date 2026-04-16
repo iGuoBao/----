@@ -2,9 +2,9 @@
 #define CAR_TYPE_H
 // 队伍3
 // #define CLAW_CAR_3_1     // 没有海绵的爪子
-#define CLAW_CAR_3_2   // 有海绵的爪子
+// #define CLAW_CAR_3_2   // 有海绵的爪子
 // #define FORK_CAR_3_3
-// #define BASE_CAR_3_4
+#define BASE_CAR_3_4
 
 // 队伍4
 // #define CLAW_CAR_4_1
@@ -15,7 +15,7 @@
 #if defined(CLAW_CAR_3_1)
 
 //  #define NEW_SERVO_0 // 升降
-//  #define NEW_SERVO_1 // 爪子
+ #define NEW_SERVO_1 // 爪子
 
 // START 小车基础物理参数
 #define WHEEL_BASE_MM 252          // 两轮间距 mm
@@ -36,8 +36,8 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 75
-#define LOW_SPEED_LAST_2 75
+#define LOW_SPEED_LAST_1 85
+#define LOW_SPEED_LAST_2 95
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置
@@ -69,7 +69,7 @@
 
 // START 舵机参数
 #define SERVO_OPEN_PWM      1040  // 爪子开 pwm
-#define SERVO_CLOSE_PWM     1700 // 爪子关 pwm
+#define SERVO_CLOSE_PWM     1730 // 爪子关 pwm
 
 #define SERVO_LIFT_PWM      2049  // 升降升 pwm
 #define SERVO_RETRACT_PWM   944  // 升降降 pwm
@@ -79,8 +79,8 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 60
-#define LOW_SPEED_LAST_2 60
+#define LOW_SPEED_LAST_1 80
+#define LOW_SPEED_LAST_2 90
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置
@@ -121,8 +121,8 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 80
-#define LOW_SPEED_LAST_2 90
+#define LOW_SPEED_LAST_1 85
+#define LOW_SPEED_LAST_2 95
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
 // END 循迹速度设置

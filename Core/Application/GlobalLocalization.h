@@ -15,7 +15,7 @@
 #define GLOBAL_INIT_X_GRID GLOBAL_INIT_X_MM / 400
 #define GLOBAL_INIT_Y_GRID GLOBAL_INIT_Y_MM / 400
 // #define GLOBAL_INIT_YAW_DEG  (-90.0f) 		// 0度表示出发点方向 逆时针yaw+
-#define GLOBAL_INIT_YAW_DEG  (180.0f) 		// 0度表示出发点方向 逆时针yaw+
+#define GLOBAL_INIT_YAW_DEG  (0.0f) 		// 0度表示出发点方向 逆时针yaw+
 
 // 地图配置 
 #define GLOBAL_MAP_X_GRID    8 					// 场地x格子数量

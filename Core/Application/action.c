@@ -217,7 +217,8 @@ void forward(int data)
         }
 
         if (back_flag)
-            speed = -speed;
+            // speed = -speed;
+            speed = -65;
         mpu6050_sevenway_control(speed);
     }
     // motor_speed_set(-50, -50);

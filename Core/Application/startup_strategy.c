@@ -52,11 +52,17 @@ static void startup_run_shovel_loop(void)
     plan_shovel_patrol_loop();
 }
 
+static void startup_test_servo_loop(void)
+{
+    route("OwKwtwwwwdwwwS");
+}
+
 static const StartupStrategy_t g_startup_strategies[] = {
     {"PLAN 4 A", startup_run_plan_4_a},
     {"PLAN 4 B", startup_run_plan_4_b},
     {"SHOVEL RST", startup_run_shovel_reset_loop},
     {"SHOVEL LP", startup_run_shovel_loop},
+    {"TEST SERVO", startup_test_servo_loop},
 };
 
 #define STARTUP_STRATEGY_COUNT ((uint8_t)(sizeof(g_startup_strategies) / sizeof(g_startup_strategies[0])))
@@ -154,6 +160,13 @@ static void startup_nrf_send_start_cmd_if_base(void)
     NRF24L01_TxPacket(tx_payload);
     NRF24L01_TxPacket(tx_payload);
     NRF24L01_RX_Mode();
+    delay_20ms(75);
+    motor_speed_set(100, 62); // 155   120
+    delay_20ms(62);
+    motor_speed_set(-7, -5);
+    delay_20ms(300);
+    motor_speed_set(0, 0);
+    while (1);
 #endif
 }
 
@@ -181,6 +194,7 @@ void startup_strategy_run(void)
         {
             startup_nrf_send_start_cmd_if_base();
             should_start = 1u;
+            
         }
         else if (startup_nrf_has_start_cmd())
         {

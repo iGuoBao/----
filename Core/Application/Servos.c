@@ -73,10 +73,10 @@ void Servos_up(int position) {
 
 void Servos_open(int position) {	
 #if defined(NEW_SERVO_1)
-	sprintf(k,"#001P%4dT0300!\r\n",position);
+	sprintf(k,"#001P%4dT0600!\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	sprintf(k,"#001P%4dT0300\r\n",position);
+	sprintf(k,"#001P%4dT0600\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	delay_20ms(5);
@@ -84,10 +84,10 @@ void Servos_open(int position) {
 
 void Servos_close(int position) {
 #if defined(NEW_SERVO_1)
-    sprintf(k,"#001P%4dT0300!\r\n",position);
+    sprintf(k,"#001P%4dT0600!\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	sprintf(k,"#001P%4dT0300\r\n",position);
+	sprintf(k,"#001P%4dT0600\r\n",position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	delay_20ms(5);

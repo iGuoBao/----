@@ -10,17 +10,16 @@ void plan_4_a()
     delay_20ms(50);
     delay_20ms(50);
     delay_20ms(50);
-    delay_20ms(50);
 
     // 适配角度
-    route("A");
     // 特调 下基地车
-    forward(-1);
+    // forward_delay(100,40);
+    forward(1);
     // 抓取圆环
-    route("R1Kw");
+    route("LOw1Kw");
     // 特调 下坡 期望变速
     forward_delay(50,80);
-    forward_delay(100,40);
+    forward_delay(200,40);
     // 满分前
     route("1R1L1R");
     // 得分
@@ -48,21 +47,18 @@ void plan_4_a()
 // 去右侧的
 void plan_4_b()
 {
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
+
     delay_20ms(50);
     delay_20ms(50);
     // 适配角度
-    route("A");
     // 特调 下基地车
-    forward(-1);
+    // forward_delay(100,40);
+    forward(1);
     // 特调下坡 变速
     // route("L");
     // forward_delay(100,50);
     // 特调下坡 直接倒车
-    route("R");
+    route("L");
     forward(-1);
     route("A");
 
@@ -163,3 +159,9 @@ void plan_shovel_patrol_loop(void)
 
     ShovelStrategy_RunLoop();
 }
+
+void test_servo_loop(void)
+{
+    route("OwwwwKwwwwtwwwwdwwwS");
+}
+
