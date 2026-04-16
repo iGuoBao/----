@@ -13,7 +13,8 @@ void plan_4_a()
 
     // 适配角度
     // 特调 下基地车
-    // forward_delay(100,40);
+    forward_delay(75,40);
+    delay_20ms(50);
     forward(1);
     // 抓取圆环
     route("LOw1Kw");

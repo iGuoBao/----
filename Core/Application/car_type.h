@@ -2,9 +2,9 @@
 #define CAR_TYPE_H
 // 队伍3
 // #define CLAW_CAR_3_1     // 没有海绵的爪子
-// #define CLAW_CAR_3_2   // 有海绵的爪子
+#define CLAW_CAR_3_2   // 有海绵的爪子
 // #define FORK_CAR_3_3
-#define BASE_CAR_3_4
+// #define BASE_CAR_3_4
 
 // 队伍4
 // #define CLAW_CAR_4_1
@@ -79,7 +79,7 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 80
+#define LOW_SPEED_LAST_1 85
 #define LOW_SPEED_LAST_2 90
 #define LOW_SPEED_LAST_3 100
 #define LOW_SPEED_LAST_MORE 110
@@ -89,7 +89,7 @@
 #define MPU6050_TURN_P 1.90f
 #define MPU6050_TURN_I 0.3f
 #define MPU6050_TURN_D 0.2f
-#define MPU6050_TURN_MAX_OUTPUT 85
+#define MPU6050_TURN_MAX_OUTPUT 80
 #define MPU6050_TURN_MAX_INTEGRAL 3000
 // END MPU6050转向PID参数
 
