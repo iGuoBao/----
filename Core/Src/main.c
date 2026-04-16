@@ -31,6 +31,7 @@
 #include "astar.h"
 #include "translate_route_cmd.h"
 #include "plan.h"
+#include "startup_strategy.h"
 // /* USER CODE END Includes */
 // /* Private typedef -----------------------------------------------------------*/
 // /* USER CODE BEGIN PTD */
@@ -151,93 +152,11 @@ int main(void)
     /*物块八分*/ static char test3[100] = {'O', '1', 'R', '1', 'L', '2', 'L', '1', 'R', '2', 'K', 'R', 'O', '3', 'A', 'w', '8', 'A', '1', 'R', '2', 'K', 'A', '2', 'L', '1', 'O', 'B', 'A', '2', 'L', '2', 'L', '2', 'K', 'A', '2', 'R', '2', 'R', '2', 'O', 'A', '3', 'R', '1', 'K', 'A', '1', 'R', '5', 'O', 'A', '1', 'L', '2', 'K', 'A', '2', 'R', '1', 'O', 'S'}; // 方块八分960
                                                                                                                                                                                                                                                                                                                                                                        // static char test4[100] = {'D','w','w','D','R','1','R','7','S'};
     /*完胜*/ static char test5[100] = {'O', '1', 'L', '2', 'R', '1', 'K', '2', 'L', 'T', 'w', 'f', 'w', 'O', 'B', 'D', 'w', 'A', '1', 'K', 'T', 'w', 'L', 'L', '1', 'w', 'f', 'w', 'O', 'S', 'B', 'D', 'w', 'A', '1', 'L', '1', 'R', '6', 'w', 'f', 'w', 'b', 'L', 'L', '1', 'R', '1', 'K', 't', 'w', 'R', 'f', 'w', 'O', 'B', 'w', 'd', 'w', 'w', 'A', '1', 'L', '2', 'K', 't', 'w', 'w', 'A', '2', 'R', '1', 'f', 'w', 'O', 'S'};
-// 基地车
-#ifdef BASE_CAR_3_4
-    while (1)
-    {
-        if (Button_IsPressed(BUTTON_PC0))
-        {
-            motor_speed_set(98, 62); // 155   120
-            delay_20ms(58);
-            motor_speed_set(-7, -5);
-            delay_20ms(300);
-            motor_speed_set(0, 0);
-            while (1);
-        }
-        else if (Button_IsPressed(BUTTON_PC1))
-        {
-            motor_speed_set(98, 0); // 155   120
-            delay_20ms(55);
-            motor_speed_set(-7, -5);
-            delay_20ms(300);
-            motor_speed_set(0, 0);
-            while (1);
-        }
-        else if (Button_IsPressed(BUTTON_PC2))
-        {
-            motor_speed_set(98, 62); // 155   120
-            delay_20ms(55);
-            motor_speed_set(-7, -5);
-            delay_20ms(300);
-            motor_speed_set(0, 0);
-            while (1);
-        }
-        else if (Button_IsPressed(BUTTON_PC3))
-        {
-            motor_speed_set(98, 62); // 155   120
-            delay_20ms(55);
-            motor_speed_set(-7, -5);
-            delay_20ms(300);
-            motor_speed_set(0, 0);
-            while (1);
-        }
-           
-    }
-
-#endif
+    startup_strategy_run();
 
     while (1)
     {
-        if (Button_IsPressed(BUTTON_PC0))
-        {
-            // route(test5);
-            // route(test_s);//测试用
-            // route("fwwbS");
-            // route("1twwwfODwKTwwwbwOdwwS"); // 三分区高度足够
-            // route("OwwwKwwwOwwwKwwwS");
-
-            // plan_a();
-            plan_4_a();
-        }
-        else if (Button_IsPressed(BUTTON_PC1))
-        {
-            // route("2R1OL1L1R2KRO3bA1R1KRTwfwOwBDwA1L2KA2R1TwfwOS");
-            // route("dwtwdwtwS");
-            // route("OwwKwwwtwwwdwwwS");// ceshi
-            // route("TwDwTwDwTwS");
-
-            // plan_b();
-            plan_4_b();
-        }
-        else if (Button_IsPressed(BUTTON_PC2))
-        {
-            route("R1L1");
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            delay_20ms(50);
-            GlobalLoc_ResetPose(400, 1200, 0);
-            plan_shovel_patrol_loop();
-        }
-        else if (Button_IsPressed(BUTTON_PC3))
-        {
-            // route("R1L1");
-            plan_shovel_patrol_loop();
-        }
-        delay_20ms(10);
+        delay_20ms(50);
     }
 }
 

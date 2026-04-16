@@ -783,6 +783,16 @@
               <FilePath>..\Core\Application\plan.c</FilePath>
             </File>
             <File>
+              <FileName>startup_strategy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Application\startup_strategy.c</FilePath>
+            </File>
+            <File>
+              <FileName>startup_strategy.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Application\startup_strategy.h</FilePath>
+            </File>
+            <File>
               <FileName>shovel_strategy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Application\shovel_strategy.c</FilePath>
