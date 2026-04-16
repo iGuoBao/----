@@ -1,6 +1,26 @@
 #include "action.h"
 #include "math.h"
 
+#define FORWARD_STALL_TIMEOUT_20MS 120u
+
+static uint8_t s_motion_guard_enabled = 0;
+static uint8_t s_motion_fault = 0;
+
+void Action_EnableMotionGuard(uint8_t enable)
+{
+    s_motion_guard_enabled = (enable != 0u) ? 1u : 0u;
+}
+
+void Action_ResetMotionFault(void)
+{
+    s_motion_fault = 0u;
+}
+
+uint8_t Action_HasMotionFault(void)
+{
+    return s_motion_fault;
+}
+
 int count_zeros_8bit(uint8_t num)
 {
     if (num == 0)
@@ -138,6 +158,7 @@ void forward(int data)
     uint8_t flag = 0;
     int speed = 0;
     int back_flag = 0;
+    uint32_t last_transition_tick = mpu6050_get_ctrl_tick20ms();
 
     // 如果data是负数 等会就倒车
     if (data < 0)
@@ -159,9 +180,20 @@ void forward(int data)
         {
             state = current_state;
             flag++;
+            last_transition_tick = mpu6050_get_ctrl_tick20ms();
         }
         if (data * 2 - 1 == flag)
             break;
+
+        if (s_motion_guard_enabled)
+        {
+            uint32_t now_tick = mpu6050_get_ctrl_tick20ms();
+            if ((uint32_t)(now_tick - last_transition_tick) > FORWARD_STALL_TIMEOUT_20MS)
+            {
+                s_motion_fault = 1u;
+                break;
+            }
+        }
 
         if (data == 1)
         {
@@ -290,6 +322,13 @@ void route(char Road[50])
 
     while (i < 49)
     {
+        if (s_motion_fault)
+        {
+            motor_pid_init();
+            motor_speed_set(0, 0);
+            return;
+        }
+
         if (Road[i] == '\0')
         {
             return;

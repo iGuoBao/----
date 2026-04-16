@@ -3,7 +3,11 @@
 #include "action.h"
 #include "GlobalLocalization.h"
 
+#include <math.h>
 #include <string.h>
+
+#define SHOVEL_RECOVERY_MAX_RETRY 3u
+#define SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT 1u
 
 typedef struct
 {
@@ -25,6 +29,19 @@ typedef struct
 
 static ShovelStrategyContext_t s_ctx;
 
+static int16_t clamp_i16(int16_t value, int16_t min_value, int16_t max_value)
+{
+    if (value < min_value)
+    {
+        return min_value;
+    }
+    if (value > max_value)
+    {
+        return max_value;
+    }
+    return value;
+}
+
 static uint8_t is_valid_grid(int16_t x, int16_t y)
 {
     return (x >= 0 && x < ASTAR_MAP_WIDTH && y >= 0 && y < ASTAR_MAP_HEIGHT);
@@ -33,6 +50,102 @@ static uint8_t is_valid_grid(int16_t x, int16_t y)
 static uint16_t abs_diff_i16(int16_t a, int16_t b)
 {
     return (a >= b) ? (uint16_t)(a - b) : (uint16_t)(b - a);
+}
+
+static int16_t mm_to_grid_nearest_i32(int32_t mm, int16_t max_grid)
+{
+    int32_t grid = (mm + (GLOBAL_GRID_SIZE_MM / 2)) / GLOBAL_GRID_SIZE_MM;
+    return clamp_i16((int16_t)grid, 0, max_grid);
+}
+
+static void get_pose_grid_now(const GlobalPose_t *pose, int16_t *grid_x, int16_t *grid_y)
+{
+    if (pose == NULL || grid_x == NULL || grid_y == NULL)
+    {
+        return;
+    }
+
+    *grid_x = mm_to_grid_nearest_i32(pose->x_mm, (int16_t)(ASTAR_MAP_WIDTH - 1));
+    *grid_y = mm_to_grid_nearest_i32(pose->y_mm, (int16_t)(ASTAR_MAP_HEIGHT - 1));
+}
+
+static float normalize_yaw(float deg)
+{
+    while (deg >= 180.0f)
+    {
+        deg -= 360.0f;
+    }
+    while (deg < -180.0f)
+    {
+        deg += 360.0f;
+    }
+    return deg;
+}
+
+static float abs_angle_diff(float a, float b)
+{
+    return fabsf(normalize_yaw(a - b));
+}
+
+static void yaw_to_forward_step(float yaw_deg, int8_t *dx, int8_t *dy)
+{
+    float candidates[4] = {0.0f, 90.0f, 180.0f, -90.0f};
+    int8_t step_dx[4] = {1, 0, -1, 0};
+    int8_t step_dy[4] = {0, 1, 0, -1};
+    uint8_t best = 0;
+    float best_diff = 1e9f;
+
+    if (dx == NULL || dy == NULL)
+    {
+        return;
+    }
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        float diff = abs_angle_diff(yaw_deg, candidates[i]);
+        if (diff < best_diff)
+        {
+            best_diff = diff;
+            best = i;
+        }
+    }
+
+    *dx = step_dx[best];
+    *dy = step_dy[best];
+}
+
+static uint8_t has_reached_goal(AStar_GridPoint_t goal)
+{
+    GlobalPose_t pose = GlobalLoc_GetPose();
+    int16_t now_x = 0;
+    int16_t now_y = 0;
+
+    get_pose_grid_now(&pose, &now_x, &now_y);
+    return (now_x == (int16_t)goal.x && now_y == (int16_t)goal.y) ? 1u : 0u;
+}
+
+static void mark_front_obstacle_from_pose(void)
+{
+    GlobalPose_t pose = GlobalLoc_GetPose();
+    int16_t now_x = 0;
+    int16_t now_y = 0;
+    int8_t dx = 0;
+    int8_t dy = 0;
+    int16_t obstacle_x;
+    int16_t obstacle_y;
+
+    get_pose_grid_now(&pose, &now_x, &now_y);
+    yaw_to_forward_step(pose.yaw, &dx, &dy);
+
+    obstacle_x = (int16_t)(now_x + dx);
+    obstacle_y = (int16_t)(now_y + dy);
+
+    if (!is_valid_grid(obstacle_x, obstacle_y))
+    {
+        return;
+    }
+
+    AStar_SetObstacle(obstacle_x, obstacle_y);
 }
 
 static uint16_t patrol_manhattan_distance(uint8_t idx_a, uint8_t idx_b)
@@ -214,9 +327,9 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 {
     char cmd[50];
     char route_cmd[50];
+    char debug_line[50];
     AStar_Map_t *map = AStar_GetMap();
     uint8_t grid_backup[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
-    uint16_t cmd_len = 0;
 
     if (map == NULL)
     {
@@ -224,68 +337,110 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         return 0;
     }
 
-    memcpy(grid_backup, map->grid, sizeof(grid_backup));
-    apply_non_patrol_penalty(map);
-
-    memset(cmd, 0, sizeof(cmd));
-    // 如果巡逻点
-    if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+    for (uint8_t attempt = 0; attempt < SHOVEL_RECOVERY_MAX_RETRY; attempt++)
     {
-        s_ctx.last_translate_status = TranslateRouteCmd_GenerateToGoalWithIntent((int16_t)goal.x,
-                                                                      (int16_t)goal.y,
-                                                                      TRANSLATE_ROUTE_INTENT_NONE,
-                                                                      cmd,
-                                                                      sizeof(cmd));
-    }
-    else
-    {
-        // 就带尾巴  放方块
-        s_ctx.last_translate_status = TranslateRouteCmd_GenerateToGoalWithIntent((int16_t)goal.x,
-                                                                      (int16_t)goal.y,
-                                                                      TRANSLATE_ROUTE_INTENT_PLACE_CUBE,
-                                                                      cmd,
-                                                                      sizeof(cmd));
-    }
-    memcpy(map->grid, grid_backup, sizeof(grid_backup));
+        GlobalPose_t pose = GlobalLoc_GetPose();
+        int16_t start_x = 0;
+        int16_t start_y = 0;
+        uint16_t cmd_len = 0;
 
-    if (s_ctx.last_translate_status != TRANSLATE_ROUTE_CMD_OK)
-    {
-        return 0;
+        get_pose_grid_now(&pose, &start_x, &start_y);
+
+        memcpy(grid_backup, map->grid, sizeof(grid_backup));
+        apply_non_patrol_penalty(map);
+
+        memset(cmd, 0, sizeof(cmd));
+        if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+        {
+            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
+                                                                               start_y,
+                                                                               pose.yaw,
+                                                                               (int16_t)goal.x,
+                                                                               (int16_t)goal.y,
+                                                                               TRANSLATE_ROUTE_INTENT_NONE,
+                                                                               cmd,
+                                                                               sizeof(cmd));
+        }
+        else
+        {
+            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
+                                                                               start_y,
+                                                                               pose.yaw,
+                                                                               (int16_t)goal.x,
+                                                                               (int16_t)goal.y,
+                                                                               TRANSLATE_ROUTE_INTENT_PLACE_CUBE,
+                                                                               cmd,
+                                                                               sizeof(cmd));
+        }
+
+        memcpy(map->grid, grid_backup, sizeof(grid_backup));
+
+        if (s_ctx.last_translate_status != TRANSLATE_ROUTE_CMD_OK)
+        {
+            return 0;
+        }
+
+        if (cmd[0] == '\0')
+        {
+            return 1;
+        }
+
+        while (cmd_len < (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
+        {
+            cmd_len++;
+        }
+
+        if (cmd_len >= (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
+        {
+            s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_BUFFER;
+            return 0;
+        }
+
+        memset(route_cmd, 0, sizeof(route_cmd));
+        memcpy(route_cmd, cmd, cmd_len);
+        route_cmd[cmd_len] = '\0';
+
+        OLED_ClearArea(0, 0, 128, 16);
+        sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
+        OLED_ShowString(0, 0, debug_line, OLED_8X16);
+        OLED_ClearArea(0, 16, 128, 16);
+        memset(debug_line, 0, sizeof(debug_line));
+        sprintf(debug_line, "R%u %s", (unsigned)(attempt + 1U), route_cmd);
+        OLED_ShowString(0, 16, debug_line, OLED_8X16);
+        OLED_Update();
+
+        Action_ResetMotionFault();
+        Action_EnableMotionGuard(1u);
+        route(route_cmd);
+        Action_EnableMotionGuard(0u);
+
+        if (!Action_HasMotionFault() && has_reached_goal(goal))
+        {
+            return 1;
+        }
+
+        motor_speed_set(0, 0);
+
+        if (attempt >= SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT || Action_HasMotionFault())
+        {
+            mark_front_obstacle_from_pose();
+        }
+
+        Action_ResetMotionFault();
+        Action_EnableMotionGuard(1u);
+        forward(-1);
+        Action_EnableMotionGuard(0u);
+
+        if (Action_HasMotionFault())
+        {
+            Action_ResetMotionFault();
+            return 0;
+        }
+
+        delay_20ms(5);
     }
 
-    if (cmd[0] == '\0')
-    {
-        return 1;
-    }
-
-    while (cmd_len < (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-    {
-        cmd_len++;
-    }
-
-    if (cmd_len >= (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-    {
-        s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_BUFFER;
-        return 0;
-    }
-
-    memset(route_cmd, 0, sizeof(route_cmd));
-    memcpy(route_cmd, cmd, cmd_len);
-    route_cmd[cmd_len] = '\0';
-
-    // debug 第一行显示目标点 第二行显示转译的命令
-    char debug_line[50];
-    OLED_ClearArea(0, 0, 128, 16);
-    sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
-    OLED_ShowString(0, 0, debug_line, OLED_8X16);
-    OLED_ClearArea(0, 16, 128, 16);
-    memset(debug_line, 0, sizeof(debug_line));
-    sprintf(debug_line, "%s", route_cmd);
-    OLED_ShowString(0, 16, debug_line, OLED_8X16);
-    OLED_Update();
-    delay_20ms(50);
-    route(route_cmd);
-    return 1;
+    return 0;
 }
 
 void ShovelStrategy_Init(void)
