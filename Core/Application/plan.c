@@ -2,73 +2,35 @@
 #include "action.h"
 #include "shovel_strategy.h"
 
-
-/**
- * @brief 策略 到左侧对方区域满分环，去待机区等待，推走方块 然后回去，尝试左侧拿走2分
- *         双车策略
- */
-void plan_a()
-{
-    // 在左侧对方区域满分环
-    route("wO1dfw1KL2R1L1RtwfObd");
-    // 去待机区
-    route("Rbw");
-    // 在待机区等待
-    for (int i = 0; i < 8; i++)
-    {
-        delay_20ms(50);
-    }
-    // 推走方块 然后回去
-    route("2wwbw");
-    
-    // 尝试右侧拿走2分
-    // route("TRfDKtbK");
-    route("tRwwwfODwwKTwwwbwOdww");
-
-    route("S");
-}
-
-
-/**
- * @brief 策略 到右侧对方区域阻碍对方满分，等待100s，推走方块 然后回去，尝试右侧抓走对方满分环，尝试右侧拿走2分
- *         双车策略
- */
-void plan_b()
-{
-    // 在右侧对方区域阻碍对方满分
-    route("1R1ww1KL2R1AbO");
-    // 等待100s
-    for (int i = 0; i < 3; i++)
-    {
-        delay_20ms(50);
-    }
-    // 推走方块 然后回去
-    route("2wwbbw1");
-    // 尝试右侧抓走对方满分环
-    // route("T1RfDKTbO");
-    route("tRwwwfODwKTwwwbwOww");
-    // 尝试右侧拿走2分
-    // route("AfDKTbORd");
-    route("LLwwwfODwwKTwwwbwOdww");
-    route("S");
-}
-
 /**
  * @brief 策略 到右侧对方区域阻碍对方满分，等待100s，推走方块 然后回去，尝试右侧抓走对方满分环，尝试右侧拿走2分
  *         4车策略
  */
 void plan_4_a()
 {
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
 
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
+    // 适配角度
+    route("A");
+    // 特调 下基地车
+    forward(-1);
+    // 抓取圆环
+    route("R1Kw");
+    // 特调 下坡 期望变速
+    forward_delay(50,80);
+    forward_delay(100,40);
+    // 满分前
+    route("1R1L1R");
+    // 得分
+    route("twwwfObd");
 
     // 在左侧对方区域满分环
-    route("wwOwdwf1L1Kw2R1L1RtwwwfObd");
+    // route("wwOwdwf1L1Kw2R1L1RtwwwfObd");
     // 去待机区
     route("Rbw");
     // 在待机区等待
@@ -88,16 +50,25 @@ void plan_4_a()
 
 void plan_4_b()
 {
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    delay_20ms(50);
+    // 适配角度
+    route("A");
+    // 特调 下基地车
+    forward(-1);
+    // 特调下坡
+    route("L");
+    forward_delay(100,50);
 
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
-    delay_20ms(50);
+    // 去对方得分区
+    route("1L1R1AbO");
 
     // 在右侧对方区域阻碍对方满分
-    route("f1R1ww1KL1R1AbO");
+    // route("f1R1ww1KL1R1AbO");
     // 等待100s
     for (int i = 0; i < 8; i++)
     {
