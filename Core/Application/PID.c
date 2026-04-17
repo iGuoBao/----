@@ -101,7 +101,7 @@ PIDController motor_left;
 PIDController motor_right;
 void motor_pid_init()
 {
-    PID_Init(&motor_left, 3, 0.5f, 0.3f, 800, 400, 0.02f);
+    PID_Init(&motor_left, 4.0, 0.5f, 0.3f, 800, 400, 0.02f);
     PID_Init(&motor_right, 3, 0.5f, 0.3f, 800, 400, 0.02f);
 }
 

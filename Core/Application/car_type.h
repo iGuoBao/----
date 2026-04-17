@@ -1,8 +1,8 @@
 #ifndef CAR_TYPE_H
 #define CAR_TYPE_H
 // 队伍3
-// #define CLAW_CAR_3_1     // 没有海绵的爪子
-#define CLAW_CAR_3_2   // 有海绵的爪子
+#define CLAW_CAR_3_1     // 没有海绵的爪子
+// #define CLAW_CAR_3_2   // 有海绵的爪子
 // #define FORK_CAR_3_3
 // #define BASE_CAR_3_4
 
@@ -29,7 +29,7 @@
 #define SERVO_CLOSE_PWM     1550 // 爪子关 pwm
 
 #define SERVO_LIFT_PWM      2159  // 升降升 pwm
-#define SERVO_RETRACT_PWM   904  // 升降降 pwm
+#define SERVO_RETRACT_PWM   950  // 升降降 pwm
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_dt_TIME    2 // d 正常的升降 时间
 #define SERVO_DT_TIME    1 // D 正常的升降 时间
@@ -52,7 +52,7 @@
 
 // START 后退参数
 #define BACKWARD_SPEED -44
-#define BACKWARD_TIME_20ms 110
+#define BACKWARD_TIME_20ms 85
 // END 后退参数
 
 #elif defined(CLAW_CAR_3_2)

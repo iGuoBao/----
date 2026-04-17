@@ -51,9 +51,11 @@ void plan_4_b()
 
     delay_20ms(50);
     delay_20ms(50);
+    delay_20ms(50);
     // 适配角度
     // 特调 下基地车
-    // forward_delay(100,40);
+    forward_delay(25,40);
+    delay_20ms(50);
     forward(1);
     // 特调下坡 变速
     // route("L");
@@ -74,13 +76,13 @@ void plan_4_b()
         delay_20ms(50);
     }
     // 推走方块 然后回去
-    route("2wwbw");
+    route("2wwbbw1");
     // 尝试右侧抓走对方满分环
     // route("T1RfDKTbO");
     route("tRwwwfODwKTwwwbwOww");
     // 尝试右侧拿走2分
     // route("AfDKTbORd");
-    route("LLwwwfODwwKTwwwbwOdww");
+    route("LLwwwfODwwKwwTwwwbwOdww");
     route("S");
 }
 
@@ -169,7 +171,7 @@ void test_servo_loop(void)
 void base_car_startup_strategy_run(void)
 {
     delay_20ms(75);
-    motor_speed_set(100, 62); // 155   120
+    motor_speed_set(80, 62); // 155   120
     delay_20ms(62);
     motor_speed_set(-7, -5);
     delay_20ms(300);
