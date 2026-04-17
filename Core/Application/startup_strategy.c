@@ -160,13 +160,7 @@ static void startup_nrf_send_start_cmd_if_base(void)
     NRF24L01_TxPacket(tx_payload);
     NRF24L01_TxPacket(tx_payload);
     NRF24L01_RX_Mode();
-    delay_20ms(75);
-    motor_speed_set(100, 62); // 155   120
-    delay_20ms(62);
-    motor_speed_set(-7, -5);
-    delay_20ms(300);
-    motor_speed_set(0, 0);
-    while (1);
+    base_car_startup_strategy_run();
 #endif
 }
 

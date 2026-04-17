@@ -166,3 +166,14 @@ void test_servo_loop(void)
     route("OwwwwKwwwwtwwwwdwwwS");
 }
 
+void base_car_startup_strategy_run(void)
+{
+    delay_20ms(75);
+    motor_speed_set(100, 62); // 155   120
+    delay_20ms(62);
+    motor_speed_set(-7, -5);
+    delay_20ms(300);
+    motor_speed_set(0, 0);
+    while (1);
+}
+
