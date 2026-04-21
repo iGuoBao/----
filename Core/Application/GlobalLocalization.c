@@ -17,14 +17,26 @@ static GlobalPose_t s_pose;
 // 上一次采样的 MPU yaw（度）
 static float s_last_mpu_yaw = 0.0f;
 
-// 十字路口检测与对齐
+// 十字路口检测与栅格定位
 #define CROSSROAD_BITMAP_ALL_WHITE 0x00
 #define CROSSROAD_BITMAP_MIDDLE5_MASK 0x3E  // bit1~bit5
-#define CROSSROAD_ALIGN_GRID_MM 400
-#define CROSSROAD_YAW_TOLERANCE_DEG 10.0f
 static bool s_crossroad_active = false;
-static int32_t s_crossroad_x_mm = 0;
-static int32_t s_crossroad_y_mm = 0;
+static bool s_crossroad_anchor_ready = false;
+
+typedef struct
+{
+    int8_t from_x;
+    int8_t from_y;
+    int8_t to_x;
+    int8_t to_y;
+} CrossroadSkipEdgeRule_t;
+
+static const CrossroadSkipEdgeRule_t s_crossroad_skip_edges[] = {
+    {1, 5, 1, 6}, {1, 7, 1, 6}, {2, 5, 2, 6}, {2, 7, 2, 6},
+    {1, 5, 1, 4}, {1, 3, 1, 4}, {2, 5, 2, 4}, {2, 3, 2, 4},
+    {6, 5, 6, 6}, {6, 7, 6, 6}, {7, 5, 7, 6}, {7, 7, 7, 6},
+    {6, 5, 6, 4}, {6, 3, 6, 4}, {7, 5, 7, 4}, {7, 3, 7, 4},
+};
 
 // 辅助：把角度裁剪到 [-180, 180)
 static float normalize_yaw(float deg)
@@ -47,17 +59,71 @@ static int32_t mm_to_grid_nearest(int32_t mm, int32_t max_grid)
     return clamp_i32(grid, 0, max_grid);
 }
 
+static float abs_angle_diff(float a, float b)
+{
+    return fabsf(normalize_yaw(a - b));
+}
+
+static void yaw_to_grid_step(float yaw_deg, int32_t *step_x, int32_t *step_y)
+{
+    static const float yaw_candidates[4] = {0.0f, 90.0f, 180.0f, -90.0f};
+    static const int8_t step_candidates[4][2] = {
+        {1, 0},
+        {0, 1},
+        {-1, 0},
+        {0, -1},
+    };
+
+    float min_diff = 1e9f;
+    uint8_t min_idx = 0;
+
+    if (step_x == NULL || step_y == NULL)
+    {
+        return;
+    }
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        float diff = abs_angle_diff(yaw_deg, yaw_candidates[i]);
+        if (diff < min_diff)
+        {
+            min_diff = diff;
+            min_idx = i;
+        }
+    }
+
+    *step_x = step_candidates[min_idx][0];
+    *step_y = step_candidates[min_idx][1];
+}
+
+static bool is_crossroad_skip_edge(int32_t from_x, int32_t from_y, int32_t to_x, int32_t to_y)
+{
+    for (uint8_t i = 0; i < (uint8_t)(sizeof(s_crossroad_skip_edges) / sizeof(s_crossroad_skip_edges[0])); i++)
+    {
+        const CrossroadSkipEdgeRule_t *rule = &s_crossroad_skip_edges[i];
+        if (rule->from_x == from_x &&
+            rule->from_y == from_y &&
+            rule->to_x == to_x &&
+            rule->to_y == to_y)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void GlobalLoc_Init()
 {
-    float  _pitch, _roll, _yaw;
-    float _yaw_sum = 0.0f;
-
     s_pose.x_mm = GLOBAL_INIT_X_MM;
     s_pose.y_mm = GLOBAL_INIT_Y_MM;
     s_pose.x_grid = GLOBAL_INIT_X_GRID;
     s_pose.y_grid = GLOBAL_INIT_Y_GRID;
     s_pose.abs_yaw = GLOBAL_INIT_YAW_DEG;
     s_pose.yaw = 0;
+
+    s_crossroad_active = false;
+    s_crossroad_anchor_ready = false;
 
     // 初始化 yaw 过滤器初值
     s_last_mpu_yaw = s_pose.yaw;
@@ -74,6 +140,8 @@ void GlobalLoc_ResetPose(int32_t x_mm, int32_t y_mm, float yaw_deg)
     s_pose.x_grid = mm_to_grid_nearest(x_mm, GLOBAL_MAP_X_GRID - 1);
     s_pose.y_grid = mm_to_grid_nearest(y_mm, GLOBAL_MAP_Y_GRID - 1);
     s_pose.yaw = yaw_deg;
+    s_crossroad_active = false;
+    s_crossroad_anchor_ready = false;
 }
 
 /**
@@ -113,78 +181,57 @@ void GlobalLoc_Periodic(void)
     // END   计算线速度和线速度相关数据
 
     // START 处理七路传感器数据
-    s_pose.seven_data = SevenWay_Read();    // 前7位有效数据位置 如果白线则对应位置0 否则为1
-    s_pose.seven_data = seven_ff; // 直接使用全局变量seven_ff，避免调用函数可能带来的延迟和不一致问题
+    s_pose.seven_data = seven_ff;
     // END   处理七路传感器数据
 
     // START 更新s_pose
-    // float current_mpu_yaw = normalize_yaw(_yaw);
-    // float yaw_diff = normalize_yaw(current_mpu_yaw - s_last_mpu_yaw);
-
-    // if (fabsf(yaw_diff) >= YAW_UPDATE_THRESHOLD_DEG) {
-    //     // 只有当变化足够大时才更新 yaw，抛弃噪声抖动
-    //     s_pose.yaw = normalize_yaw(s_pose.yaw + yaw_diff);
-    //     s_last_mpu_yaw = current_mpu_yaw;
-    // }
-    // 若变化小于阈值，则保持上次 yaw 不变
-
-    // s_pose.yaw = _yaw;  // 直接使用当前计算的相对航向，忽略滤波（如果需要滤波可以改为上面注释的方式）
-    s_pose.yaw = _yaw;  
+    s_pose.yaw = _yaw;
     s_pose.pitch = _pitch;
     s_pose.roll  = _roll;
 
-    // 结合编码器与航向角更新全局位置（毫米）：只更新 x_mm,y_mm
-    // 20ms 周期，线速度为 mm/s
-    const float dt_s = 20.0f / 1000.0f;
-    float delta_s_mm = (float)s_pose.linear_velocity_mm_s * dt_s;  // 一次周期前进距离
-
-    // yaw 为相对航向（度），转换为弧度
-    float yaw_rad = s_pose.yaw * (3.14159265358979323846f / 180.0f);
-    s_pose.x_mm += (int32_t)(delta_s_mm * cosf(yaw_rad));
-    s_pose.y_mm += (int32_t)(delta_s_mm * sinf(yaw_rad));
-
-    // 不在每个周期用整除更新grid，避免抖动与截断误差。
-    // grid坐标只在十字路口识别后再更新。
-
-    // 十字路口识别与对齐
+    // 十字路口触发定位：不再用编码器积分 x/y
     bool is_crossroad = ((s_pose.seven_data & CROSSROAD_BITMAP_MIDDLE5_MASK) == CROSSROAD_BITMAP_ALL_WHITE);
-    if (is_crossroad && !s_crossroad_active) {
+    if (is_crossroad && !s_crossroad_active)
+    {
         s_crossroad_active = true;
 
-        // 记录十字路口坐标（对齐前）
-        s_crossroad_x_mm = s_pose.x_mm;
-        s_crossroad_y_mm = s_pose.y_mm;
+        if (s_crossroad_anchor_ready)
+        {
+            int32_t step_x = 0;
+            int32_t step_y = 0;
+            int32_t step_count = 1;
+            int32_t next_x;
+            int32_t next_y;
 
-        float abs_yaw = fabsf(s_pose.yaw);
+            yaw_to_grid_step(s_pose.yaw, &step_x, &step_y);
 
-        if (fabsf(abs_yaw - 0.0f) <= CROSSROAD_YAW_TOLERANCE_DEG || fabsf(abs_yaw - 180.0f) <= CROSSROAD_YAW_TOLERANCE_DEG) {
-            // 车身朝向0/180度，按X坐标网格对齐
-            int32_t aligned_x = (int32_t)(roundf((float)s_pose.x_mm / CROSSROAD_ALIGN_GRID_MM) * CROSSROAD_ALIGN_GRID_MM);
-            s_pose.x_mm = aligned_x;
-            s_crossroad_x_mm = aligned_x;
-        } else if (fabsf(abs_yaw - 90.0f) <= CROSSROAD_YAW_TOLERANCE_DEG) {
-            // 车身朝向90度，按Y坐标网格对齐
-            int32_t aligned_y = (int32_t)(roundf((float)s_pose.y_mm / CROSSROAD_ALIGN_GRID_MM) * CROSSROAD_ALIGN_GRID_MM);
-            s_pose.y_mm = aligned_y;
-            s_crossroad_y_mm = aligned_y;
-        } else {
-            // 非纯 0/90 时，按最近网格对齐（可选双轴）
-            int32_t aligned_x = (int32_t)(roundf((float)s_pose.x_mm / CROSSROAD_ALIGN_GRID_MM) * CROSSROAD_ALIGN_GRID_MM);
-            int32_t aligned_y = (int32_t)(roundf((float)s_pose.y_mm / CROSSROAD_ALIGN_GRID_MM) * CROSSROAD_ALIGN_GRID_MM);
-            s_pose.x_mm = aligned_x;
-            s_pose.y_mm = aligned_y;
-            s_crossroad_x_mm = aligned_x;
-            s_crossroad_y_mm = aligned_y;
+            next_x = s_pose.x_grid + step_x;
+            next_y = s_pose.y_grid + step_y;
+
+            if (is_crossroad_skip_edge(s_pose.x_grid, s_pose.y_grid, next_x, next_y))
+            {
+                step_count = 2;
+            }
+
+            s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
+            s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
+        }
+        else
+        {
+            // 起始就在十字时，只做锚定，不做步进
+            s_crossroad_anchor_ready = true;
         }
 
-        // 十字路口处更新grid坐标，采用最近格点而非整除截断。
-        s_pose.x_grid = mm_to_grid_nearest(s_pose.x_mm, GLOBAL_MAP_X_GRID - 1);
-        s_pose.y_grid = mm_to_grid_nearest(s_pose.y_mm, GLOBAL_MAP_Y_GRID - 1);
-    } else if (!is_crossroad) {
+        // 十字事件后直接对齐到栅格毫米坐标
+        s_pose.x_mm = s_pose.x_grid * GLOBAL_GRID_SIZE_MM;
+        s_pose.y_mm = s_pose.y_grid * GLOBAL_GRID_SIZE_MM;
+    }
+    else if (!is_crossroad)
+    {
         s_crossroad_active = false;
     }
 
-    // 现在x_mm/y_mm是世界坐标毫米值；x_grid/y_grid仅在十字路口事件时更新
+    // 现在 x_mm/y_mm 由栅格坐标直接映射得到
     // END 更新s_pose
 }
 
