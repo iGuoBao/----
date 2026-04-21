@@ -92,8 +92,17 @@ static void yaw_to_grid_step(float yaw_deg, int32_t *step_x, int32_t *step_y)
         }
     }
 
-    *step_x = step_candidates[min_idx][0];
-    *step_y = step_candidates[min_idx][1];
+    // 如果角度与候选方向的差异过大（例如 > 45度），可以选择不进行步进，避免误判
+    if (min_diff > 20.0f)
+    {
+        *step_x = 0;
+        *step_y = 0;
+    }
+    else
+    {
+        *step_x = step_candidates[min_idx][0];
+        *step_y = step_candidates[min_idx][1];
+    }
 }
 
 static bool is_crossroad_skip_edge(int32_t from_x, int32_t from_y, int32_t to_x, int32_t to_y)
@@ -195,7 +204,7 @@ void GlobalLoc_Periodic(void)
     {
         s_crossroad_active = true;
 
-        if (s_crossroad_anchor_ready)
+        if (1)
         {
             int32_t step_x = 0;
             int32_t step_y = 0;
@@ -208,18 +217,13 @@ void GlobalLoc_Periodic(void)
             next_x = s_pose.x_grid + step_x;
             next_y = s_pose.y_grid + step_y;
 
-            if (is_crossroad_skip_edge(s_pose.x_grid, s_pose.y_grid, next_x, next_y))
-            {
-                step_count = 2;
-            }
+            // if (is_crossroad_skip_edge(s_pose.x_grid, s_pose.y_grid, next_x, next_y))
+            // {
+            //     step_count = 2;
+            // }
 
             s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
             s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
-        }
-        else
-        {
-            // 起始就在十字时，只做锚定，不做步进
-            s_crossroad_anchor_ready = true;
         }
 
         // 十字事件后直接对齐到栅格毫米坐标
