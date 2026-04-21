@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define SHOVEL_RECOVERY_MAX_RETRY 3u
-#define SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT 1u
+#define SHOVEL_RECOVERY_DRIFT_MARK_AFTER 2u
 
 typedef struct
 {
@@ -192,14 +192,12 @@ static uint32_t rng_next_bounded(uint32_t upper_exclusive)
 static void mix_rng_entropy(void)
 {
     GlobalPose_t pose = GlobalLoc_GetPose();
-    int32_t yaw10 = (int32_t)(pose.yaw * 10.0f);
     uint32_t mix = 0;
 
     mix ^= (uint32_t)HAL_GetTick();
     mix ^= (uint32_t)SysTick->VAL;
-    mix ^= (uint32_t)pose.x_mm;
-    mix ^= ((uint32_t)pose.y_mm << 11) | ((uint32_t)pose.y_mm >> 21);
-    mix ^= ((uint32_t)yaw10 << 7) | ((uint32_t)yaw10 >> 25);
+    mix ^= ((uint32_t)pose.x_mm << 11) | ((uint32_t)pose.x_mm >> 21);
+    mix ^= ((uint32_t)pose.y_mm << 7) | ((uint32_t)pose.y_mm >> 25);
     mix ^= 0x9E3779B9u;
 
     s_ctx.rng_state ^= mix;
@@ -323,121 +321,136 @@ static void apply_non_patrol_penalty(AStar_Map_t *map)
     }
 }
 
-static uint8_t execute_to_goal(AStar_GridPoint_t goal)
+static TranslateRouteCmd_Status_t generate_route_cmd(AStar_GridPoint_t goal,
+                                                      char *out_cmd,
+                                                      uint16_t out_cmd_size)
 {
-    char cmd[50];
-    char route_cmd[50];
-    char debug_line[50];
+    GlobalPose_t pose = GlobalLoc_GetPose();
+    int16_t start_x = 0;
+    int16_t start_y = 0;
     AStar_Map_t *map = AStar_GetMap();
     uint8_t grid_backup[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
+    TranslateRouteCmd_Intent_t intent;
 
-    if (map == NULL)
+    if (map == NULL || out_cmd == NULL || out_cmd_size == 0)
+    {
+        return TRANSLATE_ROUTE_CMD_ERR_PARAM;
+    }
+
+    get_pose_grid_now(&pose, &start_x, &start_y);
+
+    memcpy(grid_backup, map->grid, sizeof(grid_backup));
+    apply_non_patrol_penalty(map);
+
+    intent = (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+                 ? TRANSLATE_ROUTE_INTENT_NONE
+                 : TRANSLATE_ROUTE_INTENT_PLACE_CUBE;
+
+    s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
+                                                                       start_y,
+                                                                       pose.yaw,
+                                                                       (int16_t)goal.x,
+                                                                       (int16_t)goal.y,
+                                                                       intent,
+                                                                       out_cmd,
+                                                                       out_cmd_size);
+
+    memcpy(map->grid, grid_backup, sizeof(grid_backup));
+    return s_ctx.last_translate_status;
+}
+
+static uint8_t run_route_once(AStar_GridPoint_t goal,
+                              uint8_t *motion_fault,
+                              uint8_t *goal_reached)
+{
+    char cmd[50];
+
+    if (motion_fault == NULL || goal_reached == NULL)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
         return 0;
     }
 
+    *motion_fault = 0;
+    *goal_reached = 0;
+
+    memset(cmd, 0, sizeof(cmd));
+    if (generate_route_cmd(goal, cmd, sizeof(cmd)) != TRANSLATE_ROUTE_CMD_OK)
+    {
+        return 0;
+    }
+
+    if (cmd[0] == '\0')
+    {
+        *goal_reached = 1;
+        return 1;
+    }
+
+    Action_ResetMotionFault();
+    Action_EnableMotionGuard(1u);
+    route(cmd);
+    Action_EnableMotionGuard(0u);
+
+    *motion_fault = Action_HasMotionFault() ? 1u : 0u;
+    if (!(*motion_fault) && has_reached_goal(goal))
+    {
+        *goal_reached = 1;
+    }
+
+    return 1;
+}
+
+static uint8_t recovery_backoff_one_step(void)
+{
+    Action_ResetMotionFault();
+    Action_EnableMotionGuard(1u);
+    forward(-1);
+    Action_EnableMotionGuard(0u);
+
+    if (Action_HasMotionFault())
+    {
+        Action_ResetMotionFault();
+        return 0;
+    }
+
+    delay_20ms(5);
+    return 1;
+}
+
+static uint8_t execute_to_goal(AStar_GridPoint_t goal)
+{
     for (uint8_t attempt = 0; attempt < SHOVEL_RECOVERY_MAX_RETRY; attempt++)
     {
-        GlobalPose_t pose = GlobalLoc_GetPose();
-        int16_t start_x = 0;
-        int16_t start_y = 0;
-        uint16_t cmd_len = 0;
+        uint8_t motion_fault = 0;
+        uint8_t goal_reached = 0;
 
-        get_pose_grid_now(&pose, &start_x, &start_y);
-
-        memcpy(grid_backup, map->grid, sizeof(grid_backup));
-        apply_non_patrol_penalty(map);
-
-        memset(cmd, 0, sizeof(cmd));
-        if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
-        {
-            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
-                                                                               start_y,
-                                                                               pose.yaw,
-                                                                               (int16_t)goal.x,
-                                                                               (int16_t)goal.y,
-                                                                               TRANSLATE_ROUTE_INTENT_NONE,
-                                                                               cmd,
-                                                                               sizeof(cmd));
-        }
-        else
-        {
-            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
-                                                                               start_y,
-                                                                               pose.yaw,
-                                                                               (int16_t)goal.x,
-                                                                               (int16_t)goal.y,
-                                                                               TRANSLATE_ROUTE_INTENT_PLACE_CUBE,
-                                                                               cmd,
-                                                                               sizeof(cmd));
-        }
-
-        memcpy(map->grid, grid_backup, sizeof(grid_backup));
-
-        if (s_ctx.last_translate_status != TRANSLATE_ROUTE_CMD_OK)
+        if (!run_route_once(goal, &motion_fault, &goal_reached))
         {
             return 0;
         }
 
-        if (cmd[0] == '\0')
-        {
-            return 1;
-        }
-
-        while (cmd_len < (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-        {
-            cmd_len++;
-        }
-
-        if (cmd_len >= (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-        {
-            s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_BUFFER;
-            return 0;
-        }
-
-        memset(route_cmd, 0, sizeof(route_cmd));
-        memcpy(route_cmd, cmd, cmd_len);
-        route_cmd[cmd_len] = '\0';
-
-        OLED_ClearArea(0, 0, 128, 16);
-        sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
-        OLED_ShowString(0, 0, debug_line, OLED_8X16);
-        OLED_ClearArea(0, 16, 128, 16);
-        memset(debug_line, 0, sizeof(debug_line));
-        sprintf(debug_line, "R%u %s", (unsigned)(attempt + 1U), route_cmd);
-        OLED_ShowString(0, 16, debug_line, OLED_8X16);
-        OLED_Update();
-
-        Action_ResetMotionFault();
-        Action_EnableMotionGuard(1u);
-        route(route_cmd);
-        Action_EnableMotionGuard(0u);
-
-        if (!Action_HasMotionFault() && has_reached_goal(goal))
+        if (goal_reached)
         {
             return 1;
         }
 
         motor_speed_set(0, 0);
 
-        if (attempt >= SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT || Action_HasMotionFault())
+        if (motion_fault)
         {
+            // 明确静态阻挡：立刻标记前方格子，下一轮重规划避开。
+            mark_front_obstacle_from_pose();
+        }
+        else if ((uint8_t)(attempt + 1u) >= SHOVEL_RECOVERY_DRIFT_MARK_AFTER)
+        {
+            // 连续漂移恢复失败后，升级为疑似静态阻挡，避免重复走同一路径。
             mark_front_obstacle_from_pose();
         }
 
-        Action_ResetMotionFault();
-        Action_EnableMotionGuard(1u);
-        forward(-1);
-        Action_EnableMotionGuard(0u);
-
-        if (Action_HasMotionFault())
+        if (!recovery_backoff_one_step())
         {
-            Action_ResetMotionFault();
             return 0;
         }
-
-        delay_20ms(5);
     }
 
     return 0;

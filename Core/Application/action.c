@@ -1,7 +1,7 @@
 #include "action.h"
 #include "math.h"
 
-#define FORWARD_STALL_TIMEOUT_20MS 120u
+#define FORWARD_STALL_TIMEOUT_20MS 200u
 
 static uint8_t s_motion_guard_enabled = 0;
 static uint8_t s_motion_fault = 0;
