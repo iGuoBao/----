@@ -793,9 +793,9 @@
               <FilePath>..\Core\Application\startup_strategy.h</FilePath>
             </File>
             <File>
-              <FileName>shovel_strategy.c</FileName>
+              <FileName>loader_strategy.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Core\Application\shovel_strategy.c</FilePath>
+              <FilePath>..\Core\Application\loader_strategy.c</FilePath>
             </File>
           </Files>
         </Group>

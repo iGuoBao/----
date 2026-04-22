@@ -1,6 +1,6 @@
 #include "plan.h"
 #include "action.h"
-#include "shovel_strategy.h"
+#include "loader_strategy.h"
 
 // 去左侧的
 void plan_4_a()
@@ -86,7 +86,7 @@ void plan_4_b()
     route("S");
 }
 
-void plan_shovel_patrol_loop(void)
+void plan_loader_patrol_loop(void)
 {
     static const AStar_GridPoint_t patrol_points[] = {
         {1, 1, {0, 0}},
@@ -141,26 +141,26 @@ void plan_shovel_patrol_loop(void)
         {7, 9, {0, 0}},
     };
 
-    ShovelStrategy_Init();
-    ShovelStrategy_SetPatrolPointsBeforeReturn(2);
-    ShovelStrategy_SetPatrolMinStepDistance(2);
-    ShovelStrategy_SetNonPatrolPenalty(200);
+    LoaderStrategy_Init();
+    LoaderStrategy_SetPatrolPointsBeforeReturn(2);
+    LoaderStrategy_SetPatrolMinStepDistance(2);
+    LoaderStrategy_SetNonPatrolPenalty(200);
 
-    if (!ShovelStrategy_SetScorePoint(5, 1))
+    if (!LoaderStrategy_SetScorePoint(5, 1))
     {
         return;
     }
-    if (!ShovelStrategy_SetScorePoint(5, 9))
-    {
-        return;
-    }
-
-    if (!ShovelStrategy_SetPatrolPoints(patrol_points, (uint8_t)(sizeof(patrol_points) / sizeof(patrol_points[0]))))
+    if (!LoaderStrategy_SetScorePoint(5, 9))
     {
         return;
     }
 
-    ShovelStrategy_RunLoop();
+    if (!LoaderStrategy_SetPatrolPoints(patrol_points, (uint8_t)(sizeof(patrol_points) / sizeof(patrol_points[0]))))
+    {
+        return;
+    }
+
+    LoaderStrategy_RunLoop();
 }
 
 void test_servo_loop(void)

@@ -25,7 +25,7 @@ static void startup_run_plan_4_b(void)
     plan_4_b();
 }
 
-static void startup_run_shovel_reset_loop(void)
+static void startup_run_loader_reset_loop(void)
 {
     route("R1L1");
     delay_20ms(50);
@@ -36,12 +36,12 @@ static void startup_run_shovel_reset_loop(void)
     delay_20ms(50);
     delay_20ms(50);
     GlobalLoc_ResetPose(400, 1200, 0);
-    plan_shovel_patrol_loop();
+    plan_loader_patrol_loop();
 }
 
-static void startup_run_shovel_loop(void)
+static void startup_run_loader_loop(void)
 {
-    plan_shovel_patrol_loop();
+    plan_loader_patrol_loop();
 }
 
 static void startup_test_servo_loop(void)
@@ -52,8 +52,8 @@ static void startup_test_servo_loop(void)
 static const StartupStrategy_t g_startup_strategies[] = {
     {"PLAN 4 A", startup_run_plan_4_a},
     {"PLAN 4 B", startup_run_plan_4_b},
-    {"SHOVEL RST", startup_run_shovel_reset_loop},
-    {"SHOVEL LP", startup_run_shovel_loop},
+    {"LOADER RST", startup_run_loader_reset_loop},
+    {"LOADER LP", startup_run_loader_loop},
     {"TEST SERVO", startup_test_servo_loop},
 };
 

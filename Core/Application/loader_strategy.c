@@ -1,4 +1,4 @@
-#include "shovel_strategy.h"
+#include "loader_strategy.h"
 
 #include "action.h"
 #include "GlobalLocalization.h"
@@ -6,12 +6,12 @@
 #include <math.h>
 #include <string.h>
 
-#define SHOVEL_RECOVERY_MAX_RETRY 3u
-#define SHOVEL_RECOVERY_DRIFT_MARK_AFTER 2u
+#define LOADER_RECOVERY_MAX_RETRY 3u
+#define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
 
 typedef struct
 {
-    AStar_GridPoint_t patrol_points[SHOVEL_STRATEGY_MAX_PATROL_POINTS];
+    AStar_GridPoint_t patrol_points[LOADER_STRATEGY_MAX_PATROL_POINTS];
     uint8_t patrol_count;
     uint8_t patrol_points_before_return;
     uint8_t patrol_points_done_since_return;
@@ -23,11 +23,11 @@ typedef struct
     uint8_t score_point_valid;
     uint8_t non_patrol_penalty;
 
-    ShovelStrategyState_t state;
+    LoaderStrategyState_t state;
     TranslateRouteCmd_Status_t last_translate_status;
-} ShovelStrategyContext_t;
+} LoaderStrategyContext_t;
 
-static ShovelStrategyContext_t s_ctx;
+static LoaderStrategyContext_t s_ctx;
 
 static int16_t clamp_i16(int16_t value, int16_t min_value, int16_t max_value)
 {
@@ -342,7 +342,7 @@ static TranslateRouteCmd_Status_t generate_route_cmd(AStar_GridPoint_t goal,
     memcpy(grid_backup, map->grid, sizeof(grid_backup));
     apply_non_patrol_penalty(map);
 
-    intent = (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+    intent = (s_ctx.state == LOADER_STRATEGY_STATE_PATROL)
                  ? TRANSLATE_ROUTE_INTENT_NONE
                  : TRANSLATE_ROUTE_INTENT_PLACE_CUBE;
 
@@ -419,7 +419,7 @@ static uint8_t recovery_backoff_one_step(void)
 
 static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 {
-    for (uint8_t attempt = 0; attempt < SHOVEL_RECOVERY_MAX_RETRY; attempt++)
+    for (uint8_t attempt = 0; attempt < LOADER_RECOVERY_MAX_RETRY; attempt++)
     {
         uint8_t motion_fault = 0;
         uint8_t goal_reached = 0;
@@ -441,7 +441,7 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
             // 明确静态阻挡：立刻标记前方格子，下一轮重规划避开。
             mark_front_obstacle_from_pose();
         }
-        else if ((uint8_t)(attempt + 1u) >= SHOVEL_RECOVERY_DRIFT_MARK_AFTER)
+        else if ((uint8_t)(attempt + 1u) >= LOADER_RECOVERY_DRIFT_MARK_AFTER)
         {
             // 连续漂移恢复失败后，升级为疑似静态阻挡，避免重复走同一路径。
             mark_front_obstacle_from_pose();
@@ -456,23 +456,23 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
     return 0;
 }
 
-void ShovelStrategy_Init(void)
+void LoaderStrategy_Init(void)
 {
     memset(&s_ctx, 0, sizeof(s_ctx));
     s_ctx.patrol_points_before_return = 2;
-    s_ctx.min_patrol_step_distance = SHOVEL_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
+    s_ctx.min_patrol_step_distance = LOADER_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
     s_ctx.last_patrol_index = -1;
     s_ctx.rng_state = HAL_GetTick() ^ SysTick->VAL ^ 0x9E3779B9u;
     if (s_ctx.rng_state == 0)
     {
         s_ctx.rng_state = 0xA341316Cu;
     }
-    s_ctx.non_patrol_penalty = SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.non_patrol_penalty = LOADER_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_OK;
 }
 
-uint8_t ShovelStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
+uint8_t LoaderStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
 {
     if (!is_valid_grid(score_x, score_y))
     {
@@ -485,9 +485,9 @@ uint8_t ShovelStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
     return 1;
 }
 
-uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count)
+uint8_t LoaderStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count)
 {
-    if (points == NULL || count == 0 || count > SHOVEL_STRATEGY_MAX_PATROL_POINTS)
+    if (points == NULL || count == 0 || count > LOADER_STRATEGY_MAX_PATROL_POINTS)
     {
         return 0;
     }
@@ -505,11 +505,11 @@ uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t 
     s_ctx.patrol_count = count;
     s_ctx.last_patrol_index = -1;
     s_ctx.patrol_points_done_since_return = 0;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     return 1;
 }
 
-void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
+void LoaderStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
 {
     if (points == 0)
     {
@@ -519,32 +519,33 @@ void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
     s_ctx.patrol_points_before_return = points;
 }
 
-void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
+void LoaderStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
 {
-    ShovelStrategy_SetPatrolPointsBeforeReturn(rounds);
+    LoaderStrategy_SetPatrolPointsBeforeReturn(rounds);
 }
 
-void ShovelStrategy_SetPatrolMinStepDistance(uint8_t min_distance)
+void LoaderStrategy_SetPatrolMinStepDistance(uint8_t min_distance)
 {
     s_ctx.min_patrol_step_distance = min_distance;
 }
 
-void ShovelStrategy_SetNonPatrolPenalty(uint8_t penalty)
+void LoaderStrategy_SetNonPatrolPenalty(uint8_t penalty)
 {
     s_ctx.non_patrol_penalty = penalty;
 }
 
-ShovelStrategyState_t ShovelStrategy_GetState(void)
+LoaderStrategyState_t LoaderStrategy_GetState(void)
 {
     return s_ctx.state;
 }
 
-TranslateRouteCmd_Status_t ShovelStrategy_GetLastTranslateStatus(void)
+TranslateRouteCmd_Status_t LoaderStrategy_GetLastTranslateStatus(void)
 {
     return s_ctx.last_translate_status;
 }
 
-uint8_t ShovelStrategy_RunOnce(void)
+
+uint8_t LoaderStrategy_RunOnce(void)
 {
     int16_t next_index;
 
@@ -554,7 +555,7 @@ uint8_t ShovelStrategy_RunOnce(void)
         return 0;
     }
 
-    if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+    if (s_ctx.state == LOADER_STRATEGY_STATE_PATROL)
     {
         next_index = select_next_patrol_index();
         if (next_index < 0 || next_index >= s_ctx.patrol_count)
@@ -577,7 +578,7 @@ uint8_t ShovelStrategy_RunOnce(void)
 
         if (s_ctx.patrol_points_done_since_return >= s_ctx.patrol_points_before_return)
         {
-            s_ctx.state = SHOVEL_STRATEGY_STATE_RETURN_SCORE;
+            s_ctx.state = LOADER_STRATEGY_STATE_RETURN_SCORE;
         }
 
         return 1;
@@ -590,15 +591,15 @@ uint8_t ShovelStrategy_RunOnce(void)
 
     s_ctx.patrol_points_done_since_return = 0;
     s_ctx.last_patrol_index = -1;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     return 1;
 }
 
-void ShovelStrategy_RunLoop(void)
+void LoaderStrategy_RunLoop(void)
 {
     while (1)
     {
-        if (!ShovelStrategy_RunOnce())
+        if (!LoaderStrategy_RunOnce())
         {
             motor_speed_set(0, 0);
             delay_20ms(5);

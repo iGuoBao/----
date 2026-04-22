@@ -1,7 +1,7 @@
 #include "Encoder.h"
 #include "GlobalLocalization.h"
 #include "car_type.h"
-#include "shovel_strategy.h"
+#include "loader_strategy.h"
 #include <stdlib.h>
 int16_t encoderLeft, encoderRight;
 int sevenway_data;
@@ -226,7 +226,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // 显示七路传感器
         // sprintf(k, "S:%d", pose.seven_data);
         // OLED_ShowString(0, 48, k, OLED_8X16);
-        ShovelStrategyState_t status = ShovelStrategy_GetState();
+        LoaderStrategyState_t status = LoaderStrategy_GetState();
         sprintf(k, "Cmd:%d", status);
         OLED_ShowString(0, 48, k, OLED_8X16);
 

@@ -3,13 +3,13 @@
 // 队伍3
 // #define CLAW_CAR_3_1     // 没有海绵的爪子
 // #define CLAW_CAR_3_2   // 有海绵的爪子
-#define FORK_CAR_3_3
+#define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
 // 队伍4
 // #define CLAW_CAR_4_1
 // #define CLAW_CAR_4_2
-// #define FORK_CAR_4_3
+// #define LOADER_CAR_4_3
 // #define BASE_CAR_4_4
 
 #if defined(CLAW_CAR_3_1)
@@ -98,7 +98,7 @@
 #define BACKWARD_TIME_20ms 79
 // END 后退参数
 
-#elif defined(FORK_CAR_3_3)
+#elif defined(LOADER_CAR_3_3)
 //  #define NEW_SERVO_0 // 升降
  #define NEW_SERVO_1 // 爪子
 
@@ -184,7 +184,7 @@
 #define BACKWARD_TIME_20ms 83
 // END 后退参数
 
-#elif defined(FORK_CAR_3_3)
+#elif defined(LOADER_CAR_3_3)
 //  #define NEW_SERVO_0 // 升降
  #define NEW_SERVO_1 // 爪子
 
