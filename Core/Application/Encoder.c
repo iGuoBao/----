@@ -228,11 +228,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // sprintf(k, "L:%3d R:%3d", encoder_left_speed_mm_s, encoder_right_speed_mm_s);
         // OLED_ShowString(0, 48, k, OLED_8X16);
         // 显示七路传感器
-        // sprintf(k, "S:%d", pose.seven_data);
-        // OLED_ShowString(0, 48, k, OLED_8X16);
-        LoaderStrategyState_t status = LoaderStrategy_GetState();
-        sprintf(k, "Cmd:%d", status);
+        sprintf(k, "S:%d", pose.seven_data);
         OLED_ShowString(0, 48, k, OLED_8X16);
+        // LoaderStrategyState_t status = LoaderStrategy_GetState();
+        // sprintf(k, "Cmd:%d", status);
+        // OLED_ShowString(0, 48, k, OLED_8X16);
 
         OLED_Update();
 

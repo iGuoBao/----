@@ -708,6 +708,8 @@ static void AStar_SetStaticObstacles(void)
     AStar_SetEdgeBlockedTo(2, 4, 1, 4, 1);
     AStar_SetEdgeBlockedTo(2, 4, 3, 4, 1);
     AStar_SetEdgeBlockedTo(3, 4, 2, 4, 1);
+    AStar_SetEdgeBlockedTo(3, 5, 2, 5, 1);
+    AStar_SetEdgeBlockedTo(2, 5, 3, 5, 1);
     AStar_SetEdgeBlockedTo(7, 4, 6, 4, 1);
     AStar_SetEdgeBlockedTo(6, 4, 7, 4, 1);
     AStar_SetEdgeBlockedTo(6, 4, 5, 4, 1);
@@ -716,6 +718,8 @@ static void AStar_SetStaticObstacles(void)
     AStar_SetEdgeBlockedTo(2, 6, 1, 6, 1);
     AStar_SetEdgeBlockedTo(2, 6, 3, 6, 1);
     AStar_SetEdgeBlockedTo(3, 6, 2, 6, 1);
+    AStar_SetEdgeBlockedTo(5, 5, 6, 5, 1);
+    AStar_SetEdgeBlockedTo(6, 5, 5, 5, 1);
     AStar_SetEdgeBlockedTo(7, 6, 6, 6, 1);
     AStar_SetEdgeBlockedTo(6, 6, 7, 6, 1);
     AStar_SetEdgeBlockedTo(6, 6, 5, 6, 1);

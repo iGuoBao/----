@@ -101,7 +101,7 @@ PIDController motor_left;
 PIDController motor_right;
 void motor_pid_init()
 {
-    PID_Init(&motor_left, 3.4, 0.5f, 0.3f, 800, 400, 0.02f);
+    PID_Init(&motor_left, 3.2, 0.5f, 0.3f, 800, 400, 0.02f);
     PID_Init(&motor_right, 3, 0.5f, 0.3f, 800, 400, 0.02f);
 }
 
@@ -330,15 +330,15 @@ void mpu6050_sevenway_control(int speed)
     delta = SEVENWAY_CENTER_ALPHA * sevenway_for_control + (1.0f - SEVENWAY_CENTER_ALPHA) * delta;
     if (speed_abs > 70)
     {
-        ms_c.output_limit = 22.0f;
+        ms_c.output_limit = 25.0f;
         if (fabsf(delta) >= 24)
-            ms_c.Kp = 1.2f;
+            ms_c.Kp = 0.5f;
         else if (fabsf(delta) >= 19)
-            ms_c.Kp = 1.0f;
+            ms_c.Kp = 0.3f;
         else if (fabsf(delta) >= 9)
-            ms_c.Kp = 0.85f;
+            ms_c.Kp = 0.25f;
         else
-            ms_c.Kp = 0.75f;
+            ms_c.Kp = 0.25f;
     }
     else
     {

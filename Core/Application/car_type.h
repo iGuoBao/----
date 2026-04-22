@@ -122,9 +122,9 @@
 
 // START 循迹速度设置
 #define LOW_SPEED_LAST_1 85
-#define LOW_SPEED_LAST_2 95
-#define LOW_SPEED_LAST_3 100
-#define LOW_SPEED_LAST_MORE 110
+#define LOW_SPEED_LAST_2 120
+#define LOW_SPEED_LAST_3 140
+#define LOW_SPEED_LAST_MORE 170
 // END 循迹速度设置
 
 // START MPU6050转向PID参数
