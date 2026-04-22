@@ -54,7 +54,7 @@ void plan_4_b()
     delay_20ms(50);
     // 适配角度
     // 特调 下基地车
-    forward_delay(25,40);
+    forward_delay(25,30);
     delay_20ms(50);
     forward(1);
     // 特调下坡 变速
