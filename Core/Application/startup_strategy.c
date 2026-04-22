@@ -39,21 +39,15 @@ static void startup_run_loader_reset_loop(void)
     plan_loader_patrol_loop();
 }
 
-static void startup_run_loader_loop(void)
-{
-    plan_loader_patrol_loop();
-}
-
 static void startup_test_servo_loop(void)
 {
     route("OwKwtwwwwdwwwS");
 }
 
 static const StartupStrategy_t g_startup_strategies[] = {
-    {"PLAN 4 A", startup_run_plan_4_a},
-    {"PLAN 4 B", startup_run_plan_4_b},
-    {"LOADER RST", startup_run_loader_reset_loop},
-    {"LOADER LP", startup_run_loader_loop},
+    {"R1 C GO L", startup_run_plan_4_a},
+    {"R1 C GO R", startup_run_plan_4_b},
+    {"R1 L GO LOOP", startup_run_loader_reset_loop},
     {"TEST SERVO", startup_test_servo_loop},
 };
 
