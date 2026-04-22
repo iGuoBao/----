@@ -176,6 +176,7 @@ void forward(int data)
     uint8_t state = 0;
     uint8_t current_state = 0;
     uint8_t flag = 0;
+    uint8_t skip_initial_crossroad = 0;
     int speed = 0;
     int back_flag = 0;
     uint32_t last_transition_tick = mpu6050_get_ctrl_tick20ms();
@@ -189,6 +190,10 @@ void forward(int data)
 
     prepare_forward_track_control();
 
+    state = (count_zeros_8bit(seven_ff) >= 5) ? 1u : 0u;
+    current_state = state;
+    skip_initial_crossroad = state;
+
     flag = 0;
     while (1)
     {
@@ -196,7 +201,18 @@ void forward(int data)
             current_state = 1;
         else
             current_state = 0;
-        if ((state ^ current_state) & 0xff)
+
+        // 起步就在十字白线时，先离开白线再开始计数，避免 forward1 立刻判到达。
+        if (skip_initial_crossroad)
+        {
+            if (current_state == 0u)
+            {
+                skip_initial_crossroad = 0u;
+                state = 0u;
+                last_transition_tick = mpu6050_get_ctrl_tick20ms();
+            }
+        }
+        else if ((state ^ current_state) & 0xff)
         {
             state = current_state;
             flag++;
