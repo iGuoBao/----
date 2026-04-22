@@ -40,7 +40,7 @@ void plan_4_a()
     
     // 尝试右侧拿走2分
     // route("TRfDKtbK");
-    route("tRwwwfODwwwwwKTwwwbwODww");
+    route("tRwwwfODwwwKwwTwwwbwODw");
 
     route("S");
 }
