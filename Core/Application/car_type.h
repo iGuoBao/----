@@ -184,45 +184,4 @@
 #define BACKWARD_TIME_20ms 83
 // END 后退参数
 
-#elif defined(LOADER_CAR_3_3)
-//  #define NEW_SERVO_0 // 升降
- #define NEW_SERVO_1 // 爪子
-
-// START 小车基础物理参数
-#define WHEEL_BASE_MM 252          // 两轮间距 mm
-#define AXLE_LENGTH_MM 140         // 轴长度 mm
-#define WHEEL_CIRCUMFERENCE_MM 233 // 轮子周长 mm
-#define WHEEL_PULSES_PER_REV 1560  // 轮子一周的脉冲数
-// END 小车基础物理参数
-
-// START 舵机参数
-#define SERVO_OPEN_PWM      1050  // 爪子开 pwm
-#define SERVO_CLOSE_PWM     1700 // 爪子关 pwm
-
-#define SERVO_LIFT_PWM      2349  // 升降升 pwm
-#define SERVO_RETRACT_PWM   914  // 升降降 pwm
-#define SERVO_STOP_PWM      1500  // 升降停 pwm
-// END 舵机参数
-
-// START 循迹速度设置
-#define LOW_SPEED_LAST_1 80
-#define LOW_SPEED_LAST_2 90
-#define LOW_SPEED_LAST_3 100
-#define LOW_SPEED_LAST_MORE 110
-// END 循迹速度设置
-
-// START MPU6050转向PID参数
-#define MPU6050_TURN_P 2.20f
-#define MPU6050_TURN_I 0.3f
-#define MPU6050_TURN_D 0.2f
-#define MPU6050_TURN_MAX_OUTPUT 85
-#define MPU6050_TURN_MAX_INTEGRAL 3000
-// END MPU6050转向PID参数
-
-// START 后退参数
-#define BACKWARD_SPEED -44
-#define BACKWARD_TIME_20ms 83
-// END 后退参数
-#endif
-
 #endif
