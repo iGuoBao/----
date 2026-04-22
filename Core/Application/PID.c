@@ -343,7 +343,7 @@ void mpu6050_sevenway_control(int speed)
     else
     {
         ms_c.output_limit = 34.0f;
-        ms_c.Kp = 0.9f;
+        ms_c.Kp = 0.5f;
         ms_c.Kd = 0.15f;
     }
     data__l = PID_Update(&ms_c, 0, delta);

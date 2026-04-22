@@ -34,9 +34,29 @@ int count_zeros_8bit(uint8_t num)
     return count;
 }
 
+static float snap_to_cardinal_heading(float yaw_deg)
+{
+    static const float cardinals[4] = {0.0f, 90.0f, 180.0f, -90.0f};
+    uint8_t best_idx = 0;
+    float best_diff = 1e9f;
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        float diff = fabsf(Normalization(yaw_deg - cardinals[i]));
+        if (diff < best_diff)
+        {
+            best_diff = diff;
+            best_idx = i;
+        }
+    }
+
+    return cardinals[best_idx];
+}
+
 static void prepare_forward_track_control(void)
 {
     // Keep forward tracking gains consistent with the post-turn straight-driving setup.
+    target_angle = snap_to_cardinal_heading(z_data);
     mpu6050_pid_reset(2, 0.01f, 0.02f, 200, 3000);
     mpu6050_sevenway_init();
 }
