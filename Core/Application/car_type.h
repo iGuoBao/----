@@ -69,7 +69,7 @@
 
 // START 舵机参数
 #define SERVO_OPEN_PWM      1040  // 爪子开 pwm
-#define SERVO_CLOSE_PWM     1730 // 爪子关 pwm
+#define SERVO_CLOSE_PWM     1830 // 爪子关 pwm
 
 #define SERVO_LIFT_PWM      2049  // 升降升 pwm
 #define SERVO_RETRACT_PWM   944  // 升降降 pwm
@@ -121,10 +121,10 @@
 // END 舵机参数
 
 // START 循迹速度设置
-#define LOW_SPEED_LAST_1 85
+#define LOW_SPEED_LAST_1 80
 #define LOW_SPEED_LAST_2 100
-#define LOW_SPEED_LAST_3 120
-#define LOW_SPEED_LAST_MORE 150
+#define LOW_SPEED_LAST_3 140
+#define LOW_SPEED_LAST_MORE 160
 // END 循迹速度设置
 
 // START MPU6050转向PID参数

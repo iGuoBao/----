@@ -231,21 +231,20 @@ void forward(int data)
             }
         }
 
-        if (data == 1)
+        // 剩余路口数量
+        uint8_t remaining = data - (flag / 2);
+
+        if (remaining == 1)
         {
             speed = LOW_SPEED_LAST_1;
         }
-        else if (data == 2)
+        else if (remaining == 2)
         {
             speed = LOW_SPEED_LAST_2;
         }
-        else if (data == 3)
+        else if (remaining == 3)
         {
             speed = LOW_SPEED_LAST_3;
-        }
-        else if (flag / 2 + 1 >= data * 0.85)
-        {
-            speed = LOW_SPEED_LAST_MORE;
         }
         else
         {

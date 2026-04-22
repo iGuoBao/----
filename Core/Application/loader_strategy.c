@@ -4,11 +4,13 @@
 #include "GlobalLocalization.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #define LOADER_RECOVERY_MAX_RETRY 3u
 #define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
 #define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
+// #define LOADER_STRATEGY_DEBUG_OLED 1u
 
 typedef struct
 {
@@ -29,6 +31,42 @@ typedef struct
 } LoaderStrategyContext_t;
 
 static LoaderStrategyContext_t s_ctx;
+
+#if LOADER_STRATEGY_DEBUG_OLED
+static void loader_strategy_debug_oled(const char *tag, int16_t a, int16_t b, int16_t c)
+{
+    static uint32_t s_last_debug_tick = 0;
+
+    GlobalPose_t pose;
+    char line0[17] = {0};
+    char line1[17] = {0};
+    char line2[17] = {0};
+    char line3[17] = {0};
+
+
+    pose = GlobalLoc_GetPose();
+
+    snprintf(line0, sizeof(line0), "LS:%s", tag);
+    snprintf(line1, sizeof(line1), "st%d tr%d", (int)s_ctx.state, (int)s_ctx.last_translate_status);
+    snprintf(line2, sizeof(line2), "a%d b%d c%d", (int)a, (int)b, (int)c);
+    snprintf(line3, sizeof(line3), "g%d,%d", (int)pose.x_grid, (int)pose.y_grid);
+
+    OLED_Clear();
+    OLED_ShowString(0, 0, line0, OLED_8X16);
+    OLED_ShowString(0, 16, line1, OLED_8X16);
+    OLED_ShowString(0, 32, line2, OLED_8X16);
+    OLED_ShowString(0, 48, line3, OLED_8X16);
+    OLED_Update();
+}
+#else
+static void loader_strategy_debug_oled(const char *tag, int16_t a, int16_t b, int16_t c)
+{
+    (void)tag;
+    (void)a;
+    (void)b;
+    (void)c;
+}
+#endif
 
 static int16_t clamp_i16(int16_t value, int16_t min_value, int16_t max_value)
 {
@@ -417,6 +455,7 @@ static uint8_t run_route_once(AStar_GridPoint_t goal,
     memset(cmd, 0, sizeof(cmd));
     if (generate_route_cmd(goal, cmd, sizeof(cmd)) != TRANSLATE_ROUTE_CMD_OK)
     {
+        loader_strategy_debug_oled("TRF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)s_ctx.last_translate_status);
         return 0;
     }
 
@@ -432,6 +471,11 @@ static uint8_t run_route_once(AStar_GridPoint_t goal,
     Action_EnableMotionGuard(0u);
 
     *motion_fault = Action_HasMotionFault() ? 1u : 0u;
+    if (*motion_fault)
+    {
+        loader_strategy_debug_oled("MOT", (int16_t)goal.x, (int16_t)goal.y, 0);
+    }
+
     if (!(*motion_fault) && has_reached_goal(goal))
     {
         *goal_reached = 1;
@@ -466,6 +510,7 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 
         if (!run_route_once(goal, &motion_fault, &goal_reached))
         {
+            loader_strategy_debug_oled("RRF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
             return 0;
         }
 
@@ -489,9 +534,12 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
 
         if (!recovery_backoff_one_step())
         {
+            loader_strategy_debug_oled("BOF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
             return 0;
         }
     }
+
+    loader_strategy_debug_oled("RTX", (int16_t)goal.x, (int16_t)goal.y, LOADER_RECOVERY_MAX_RETRY);
 
     return 0;
 }
@@ -607,6 +655,7 @@ uint8_t LoaderStrategy_RunOnce(void)
     if (s_ctx.score_point_count == 0 || s_ctx.patrol_count == 0)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+        loader_strategy_debug_oled("PAR", (int16_t)s_ctx.score_point_count, (int16_t)s_ctx.patrol_count, 0);
         return 0;
     }
 
@@ -616,11 +665,15 @@ uint8_t LoaderStrategy_RunOnce(void)
         if (next_index < 0 || next_index >= s_ctx.patrol_count)
         {
             s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+            loader_strategy_debug_oled("IDX", next_index, (int16_t)s_ctx.patrol_count, 0);
             return 0;
         }
 
         if (!execute_to_goal(s_ctx.patrol_points[next_index]))
         {
+            loader_strategy_debug_oled("PAT", (int16_t)s_ctx.patrol_points[next_index].x,
+                                      (int16_t)s_ctx.patrol_points[next_index].y,
+                                      next_index);
             return 0;
         }
 
@@ -642,11 +695,13 @@ uint8_t LoaderStrategy_RunOnce(void)
     if (!select_nearest_score_point(&return_goal))
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+        loader_strategy_debug_oled("NSP", (int16_t)s_ctx.score_point_count, 0, 0);
         return 0;
     }
 
     if (!execute_to_goal(return_goal))
     {
+        loader_strategy_debug_oled("SCR", (int16_t)return_goal.x, (int16_t)return_goal.y, 0);
         return 0;
     }
 
