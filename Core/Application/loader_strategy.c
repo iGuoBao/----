@@ -1,4 +1,4 @@
-#include "shovel_strategy.h"
+#include "loader_strategy.h"
 
 #include "action.h"
 #include "GlobalLocalization.h"
@@ -6,12 +6,13 @@
 #include <math.h>
 #include <string.h>
 
-#define SHOVEL_RECOVERY_MAX_RETRY 3u
-#define SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT 1u
+#define LOADER_RECOVERY_MAX_RETRY 3u
+#define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
+#define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
 
 typedef struct
 {
-    AStar_GridPoint_t patrol_points[SHOVEL_STRATEGY_MAX_PATROL_POINTS];
+    AStar_GridPoint_t patrol_points[LOADER_STRATEGY_MAX_PATROL_POINTS];
     uint8_t patrol_count;
     uint8_t patrol_points_before_return;
     uint8_t patrol_points_done_since_return;
@@ -19,15 +20,15 @@ typedef struct
     int8_t last_patrol_index;
     uint32_t rng_state;
 
-    AStar_GridPoint_t score_point;
-    uint8_t score_point_valid;
+    AStar_GridPoint_t score_points[LOADER_STRATEGY_MAX_SCORE_POINTS];
+    uint8_t score_point_count;
     uint8_t non_patrol_penalty;
 
-    ShovelStrategyState_t state;
+    LoaderStrategyState_t state;
     TranslateRouteCmd_Status_t last_translate_status;
-} ShovelStrategyContext_t;
+} LoaderStrategyContext_t;
 
-static ShovelStrategyContext_t s_ctx;
+static LoaderStrategyContext_t s_ctx;
 
 static int16_t clamp_i16(int16_t value, int16_t min_value, int16_t max_value)
 {
@@ -192,14 +193,12 @@ static uint32_t rng_next_bounded(uint32_t upper_exclusive)
 static void mix_rng_entropy(void)
 {
     GlobalPose_t pose = GlobalLoc_GetPose();
-    int32_t yaw10 = (int32_t)(pose.yaw * 10.0f);
     uint32_t mix = 0;
 
     mix ^= (uint32_t)HAL_GetTick();
     mix ^= (uint32_t)SysTick->VAL;
-    mix ^= (uint32_t)pose.x_mm;
-    mix ^= ((uint32_t)pose.y_mm << 11) | ((uint32_t)pose.y_mm >> 21);
-    mix ^= ((uint32_t)yaw10 << 7) | ((uint32_t)yaw10 >> 25);
+    mix ^= ((uint32_t)pose.x_mm << 11) | ((uint32_t)pose.x_mm >> 21);
+    mix ^= ((uint32_t)pose.y_mm << 7) | ((uint32_t)pose.y_mm >> 25);
     mix ^= 0x9E3779B9u;
 
     s_ctx.rng_state ^= mix;
@@ -282,14 +281,53 @@ static uint8_t is_preferred_grid(int16_t x, int16_t y)
         }
     }
 
-    if (s_ctx.score_point_valid &&
-        (int16_t)s_ctx.score_point.x == x &&
-        (int16_t)s_ctx.score_point.y == y)
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
     {
-        return 1;
+        if ((int16_t)s_ctx.score_points[i].x == x &&
+            (int16_t)s_ctx.score_points[i].y == y)
+        {
+            return 1;
+        }
     }
 
     return 0;
+}
+
+static uint8_t select_nearest_score_point(AStar_GridPoint_t *out_goal)
+{
+    GlobalPose_t pose;
+    int16_t now_x = 0;
+    int16_t now_y = 0;
+    uint8_t best_idx = 0;
+    uint16_t best_dist = 0xFFFFu;
+
+    if (out_goal == NULL || s_ctx.score_point_count == 0)
+    {
+        return 0;
+    }
+
+    if (s_ctx.score_point_count == 1)
+    {
+        *out_goal = s_ctx.score_points[0];
+        return 1;
+    }
+
+    pose = GlobalLoc_GetPose();
+    get_pose_grid_now(&pose, &now_x, &now_y);
+
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
+    {
+        uint16_t dist = (uint16_t)(abs_diff_i16(now_x, (int16_t)s_ctx.score_points[i].x) +
+                                   abs_diff_i16(now_y, (int16_t)s_ctx.score_points[i].y));
+        if (dist < best_dist)
+        {
+            best_dist = dist;
+            best_idx = i;
+        }
+    }
+
+    *out_goal = s_ctx.score_points[best_idx];
+    return 1;
 }
 
 static void apply_non_patrol_penalty(AStar_Map_t *map)
@@ -323,158 +361,187 @@ static void apply_non_patrol_penalty(AStar_Map_t *map)
     }
 }
 
-static uint8_t execute_to_goal(AStar_GridPoint_t goal)
+static TranslateRouteCmd_Status_t generate_route_cmd(AStar_GridPoint_t goal,
+                                                      char *out_cmd,
+                                                      uint16_t out_cmd_size)
 {
-    char cmd[50];
-    char route_cmd[50];
-    char debug_line[50];
+    GlobalPose_t pose = GlobalLoc_GetPose();
+    int16_t start_x = 0;
+    int16_t start_y = 0;
     AStar_Map_t *map = AStar_GetMap();
     uint8_t grid_backup[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
+    TranslateRouteCmd_Intent_t intent;
 
-    if (map == NULL)
+    if (map == NULL || out_cmd == NULL || out_cmd_size == 0)
+    {
+        return TRANSLATE_ROUTE_CMD_ERR_PARAM;
+    }
+
+    get_pose_grid_now(&pose, &start_x, &start_y);
+
+    memcpy(grid_backup, map->grid, sizeof(grid_backup));
+    apply_non_patrol_penalty(map);
+
+    intent = (s_ctx.state == LOADER_STRATEGY_STATE_PATROL)
+                 ? TRANSLATE_ROUTE_INTENT_NONE
+                 : TRANSLATE_ROUTE_INTENT_PLACE_CUBE;
+
+    s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
+                                                                       start_y,
+                                                                       pose.yaw,
+                                                                       (int16_t)goal.x,
+                                                                       (int16_t)goal.y,
+                                                                       intent,
+                                                                       out_cmd,
+                                                                       out_cmd_size);
+
+    memcpy(map->grid, grid_backup, sizeof(grid_backup));
+    return s_ctx.last_translate_status;
+}
+
+static uint8_t run_route_once(AStar_GridPoint_t goal,
+                              uint8_t *motion_fault,
+                              uint8_t *goal_reached)
+{
+    char cmd[50];
+
+    if (motion_fault == NULL || goal_reached == NULL)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
         return 0;
     }
 
-    for (uint8_t attempt = 0; attempt < SHOVEL_RECOVERY_MAX_RETRY; attempt++)
+    *motion_fault = 0;
+    *goal_reached = 0;
+
+    memset(cmd, 0, sizeof(cmd));
+    if (generate_route_cmd(goal, cmd, sizeof(cmd)) != TRANSLATE_ROUTE_CMD_OK)
     {
-        GlobalPose_t pose = GlobalLoc_GetPose();
-        int16_t start_x = 0;
-        int16_t start_y = 0;
-        uint16_t cmd_len = 0;
+        return 0;
+    }
 
-        get_pose_grid_now(&pose, &start_x, &start_y);
+    if (cmd[0] == '\0')
+    {
+        *goal_reached = 1;
+        return 1;
+    }
 
-        memcpy(grid_backup, map->grid, sizeof(grid_backup));
-        apply_non_patrol_penalty(map);
+    Action_ResetMotionFault();
+    Action_EnableMotionGuard(1u);
+    route(cmd);
+    Action_EnableMotionGuard(0u);
 
-        memset(cmd, 0, sizeof(cmd));
-        if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
-        {
-            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
-                                                                               start_y,
-                                                                               pose.yaw,
-                                                                               (int16_t)goal.x,
-                                                                               (int16_t)goal.y,
-                                                                               TRANSLATE_ROUTE_INTENT_NONE,
-                                                                               cmd,
-                                                                               sizeof(cmd));
-        }
-        else
-        {
-            s_ctx.last_translate_status = TranslateRouteCmd_GenerateWithIntent(start_x,
-                                                                               start_y,
-                                                                               pose.yaw,
-                                                                               (int16_t)goal.x,
-                                                                               (int16_t)goal.y,
-                                                                               TRANSLATE_ROUTE_INTENT_PLACE_CUBE,
-                                                                               cmd,
-                                                                               sizeof(cmd));
-        }
+    *motion_fault = Action_HasMotionFault() ? 1u : 0u;
+    if (!(*motion_fault) && has_reached_goal(goal))
+    {
+        *goal_reached = 1;
+    }
 
-        memcpy(map->grid, grid_backup, sizeof(grid_backup));
+    return 1;
+}
 
-        if (s_ctx.last_translate_status != TRANSLATE_ROUTE_CMD_OK)
-        {
-            return 0;
-        }
+static uint8_t recovery_backoff_one_step(void)
+{
+    Action_ResetMotionFault();
+    Action_EnableMotionGuard(1u);
+    forward(-1);
+    Action_EnableMotionGuard(0u);
 
-        if (cmd[0] == '\0')
-        {
-            return 1;
-        }
-
-        while (cmd_len < (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-        {
-            cmd_len++;
-        }
-
-        if (cmd_len >= (uint16_t)(sizeof(cmd) - 1U) && cmd[cmd_len] != '\0')
-        {
-            s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_BUFFER;
-            return 0;
-        }
-
-        memset(route_cmd, 0, sizeof(route_cmd));
-        memcpy(route_cmd, cmd, cmd_len);
-        route_cmd[cmd_len] = '\0';
-
-        OLED_ClearArea(0, 0, 128, 16);
-        sprintf(debug_line, "Goal:(%d,%d)", (int16_t)goal.x, (int16_t)goal.y);
-        OLED_ShowString(0, 0, debug_line, OLED_8X16);
-        OLED_ClearArea(0, 16, 128, 16);
-        memset(debug_line, 0, sizeof(debug_line));
-        sprintf(debug_line, "R%u %s", (unsigned)(attempt + 1U), route_cmd);
-        OLED_ShowString(0, 16, debug_line, OLED_8X16);
-        OLED_Update();
-
+    if (Action_HasMotionFault())
+    {
         Action_ResetMotionFault();
-        Action_EnableMotionGuard(1u);
-        route(route_cmd);
-        Action_EnableMotionGuard(0u);
+        return 0;
+    }
 
-        if (!Action_HasMotionFault() && has_reached_goal(goal))
+    delay_20ms(5);
+    return 1;
+}
+
+static uint8_t execute_to_goal(AStar_GridPoint_t goal)
+{
+    for (uint8_t attempt = 0; attempt < LOADER_RECOVERY_MAX_RETRY; attempt++)
+    {
+        uint8_t motion_fault = 0;
+        uint8_t goal_reached = 0;
+
+        if (!run_route_once(goal, &motion_fault, &goal_reached))
+        {
+            return 0;
+        }
+
+        if (goal_reached)
         {
             return 1;
         }
 
         motor_speed_set(0, 0);
 
-        if (attempt >= SHOVEL_RECOVERY_MARK_AFTER_ATTEMPT || Action_HasMotionFault())
+        if (motion_fault)
         {
+            // 明确静态阻挡：立刻标记前方格子，下一轮重规划避开。
+            mark_front_obstacle_from_pose();
+        }
+        else if ((uint8_t)(attempt + 1u) >= LOADER_RECOVERY_DRIFT_MARK_AFTER)
+        {
+            // 连续漂移恢复失败后，升级为疑似静态阻挡，避免重复走同一路径。
             mark_front_obstacle_from_pose();
         }
 
-        Action_ResetMotionFault();
-        Action_EnableMotionGuard(1u);
-        forward(-1);
-        Action_EnableMotionGuard(0u);
-
-        if (Action_HasMotionFault())
+        if (!recovery_backoff_one_step())
         {
-            Action_ResetMotionFault();
             return 0;
         }
-
-        delay_20ms(5);
     }
 
     return 0;
 }
 
-void ShovelStrategy_Init(void)
+void LoaderStrategy_Init(void)
 {
     memset(&s_ctx, 0, sizeof(s_ctx));
     s_ctx.patrol_points_before_return = 2;
-    s_ctx.min_patrol_step_distance = SHOVEL_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
+    s_ctx.min_patrol_step_distance = LOADER_STRATEGY_MIN_PATROL_STEP_DISTANCE_DEFAULT;
     s_ctx.last_patrol_index = -1;
     s_ctx.rng_state = HAL_GetTick() ^ SysTick->VAL ^ 0x9E3779B9u;
     if (s_ctx.rng_state == 0)
     {
         s_ctx.rng_state = 0xA341316Cu;
     }
-    s_ctx.non_patrol_penalty = SHOVEL_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.non_patrol_penalty = LOADER_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_OK;
 }
 
-uint8_t ShovelStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
+uint8_t LoaderStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
 {
     if (!is_valid_grid(score_x, score_y))
     {
         return 0;
     }
 
-    s_ctx.score_point.x = (int8_t)score_x;
-    s_ctx.score_point.y = (int8_t)score_y;
-    s_ctx.score_point_valid = 1;
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
+    {
+        if ((int16_t)s_ctx.score_points[i].x == score_x &&
+            (int16_t)s_ctx.score_points[i].y == score_y)
+        {
+            return 1;
+        }
+    }
+
+    if (s_ctx.score_point_count >= LOADER_STRATEGY_MAX_SCORE_POINTS)
+    {
+        return 0;
+    }
+
+    s_ctx.score_points[s_ctx.score_point_count].x = (int8_t)score_x;
+    s_ctx.score_points[s_ctx.score_point_count].y = (int8_t)score_y;
+    s_ctx.score_point_count++;
     return 1;
 }
 
-uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count)
+uint8_t LoaderStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t count)
 {
-    if (points == NULL || count == 0 || count > SHOVEL_STRATEGY_MAX_PATROL_POINTS)
+    if (points == NULL || count == 0 || count > LOADER_STRATEGY_MAX_PATROL_POINTS)
     {
         return 0;
     }
@@ -492,11 +559,11 @@ uint8_t ShovelStrategy_SetPatrolPoints(const AStar_GridPoint_t *points, uint8_t 
     s_ctx.patrol_count = count;
     s_ctx.last_patrol_index = -1;
     s_ctx.patrol_points_done_since_return = 0;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     return 1;
 }
 
-void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
+void LoaderStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
 {
     if (points == 0)
     {
@@ -506,42 +573,44 @@ void ShovelStrategy_SetPatrolPointsBeforeReturn(uint8_t points)
     s_ctx.patrol_points_before_return = points;
 }
 
-void ShovelStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
+void LoaderStrategy_SetPatrolRoundsBeforeReturn(uint8_t rounds)
 {
-    ShovelStrategy_SetPatrolPointsBeforeReturn(rounds);
+    LoaderStrategy_SetPatrolPointsBeforeReturn(rounds);
 }
 
-void ShovelStrategy_SetPatrolMinStepDistance(uint8_t min_distance)
+void LoaderStrategy_SetPatrolMinStepDistance(uint8_t min_distance)
 {
     s_ctx.min_patrol_step_distance = min_distance;
 }
 
-void ShovelStrategy_SetNonPatrolPenalty(uint8_t penalty)
+void LoaderStrategy_SetNonPatrolPenalty(uint8_t penalty)
 {
     s_ctx.non_patrol_penalty = penalty;
 }
 
-ShovelStrategyState_t ShovelStrategy_GetState(void)
+LoaderStrategyState_t LoaderStrategy_GetState(void)
 {
     return s_ctx.state;
 }
 
-TranslateRouteCmd_Status_t ShovelStrategy_GetLastTranslateStatus(void)
+TranslateRouteCmd_Status_t LoaderStrategy_GetLastTranslateStatus(void)
 {
     return s_ctx.last_translate_status;
 }
 
-uint8_t ShovelStrategy_RunOnce(void)
+
+uint8_t LoaderStrategy_RunOnce(void)
 {
     int16_t next_index;
+    AStar_GridPoint_t return_goal;
 
-    if (!s_ctx.score_point_valid || s_ctx.patrol_count == 0)
+    if (s_ctx.score_point_count == 0 || s_ctx.patrol_count == 0)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
         return 0;
     }
 
-    if (s_ctx.state == SHOVEL_STRATEGY_STATE_PATROL)
+    if (s_ctx.state == LOADER_STRATEGY_STATE_PATROL)
     {
         next_index = select_next_patrol_index();
         if (next_index < 0 || next_index >= s_ctx.patrol_count)
@@ -564,28 +633,34 @@ uint8_t ShovelStrategy_RunOnce(void)
 
         if (s_ctx.patrol_points_done_since_return >= s_ctx.patrol_points_before_return)
         {
-            s_ctx.state = SHOVEL_STRATEGY_STATE_RETURN_SCORE;
+            s_ctx.state = LOADER_STRATEGY_STATE_RETURN_SCORE;
         }
 
         return 1;
     }
 
-    if (!execute_to_goal(s_ctx.score_point))
+    if (!select_nearest_score_point(&return_goal))
+    {
+        s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+        return 0;
+    }
+
+    if (!execute_to_goal(return_goal))
     {
         return 0;
     }
 
     s_ctx.patrol_points_done_since_return = 0;
     s_ctx.last_patrol_index = -1;
-    s_ctx.state = SHOVEL_STRATEGY_STATE_PATROL;
+    s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
     return 1;
 }
 
-void ShovelStrategy_RunLoop(void)
+void LoaderStrategy_RunLoop(void)
 {
     while (1)
     {
-        if (!ShovelStrategy_RunOnce())
+        if (!LoaderStrategy_RunOnce())
         {
             motor_speed_set(0, 0);
             delay_20ms(5);

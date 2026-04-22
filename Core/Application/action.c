@@ -1,7 +1,7 @@
 #include "action.h"
 #include "math.h"
 
-#define FORWARD_STALL_TIMEOUT_20MS 120u
+#define FORWARD_STALL_TIMEOUT_20MS 150u
 
 static uint8_t s_motion_guard_enabled = 0;
 static uint8_t s_motion_fault = 0;
@@ -34,9 +34,29 @@ int count_zeros_8bit(uint8_t num)
     return count;
 }
 
+static float snap_to_cardinal_heading(float yaw_deg)
+{
+    static const float cardinals[4] = {0.0f, 90.0f, 180.0f, -90.0f};
+    uint8_t best_idx = 0;
+    float best_diff = 1e9f;
+
+    for (uint8_t i = 0; i < 4; i++)
+    {
+        float diff = fabsf(Normalization(yaw_deg - cardinals[i]));
+        if (diff < best_diff)
+        {
+            best_diff = diff;
+            best_idx = i;
+        }
+    }
+
+    return cardinals[best_idx];
+}
+
 static void prepare_forward_track_control(void)
 {
     // Keep forward tracking gains consistent with the post-turn straight-driving setup.
+    target_angle = snap_to_cardinal_heading(z_data);
     mpu6050_pid_reset(2, 0.01f, 0.02f, 200, 3000);
     mpu6050_sevenway_init();
 }
@@ -156,6 +176,7 @@ void forward(int data)
     uint8_t state = 0;
     uint8_t current_state = 0;
     uint8_t flag = 0;
+    uint8_t skip_initial_crossroad = 0;
     int speed = 0;
     int back_flag = 0;
     uint32_t last_transition_tick = mpu6050_get_ctrl_tick20ms();
@@ -169,6 +190,10 @@ void forward(int data)
 
     prepare_forward_track_control();
 
+    state = (count_zeros_8bit(seven_ff) >= 5) ? 1u : 0u;
+    current_state = state;
+    skip_initial_crossroad = state;
+
     flag = 0;
     while (1)
     {
@@ -176,7 +201,18 @@ void forward(int data)
             current_state = 1;
         else
             current_state = 0;
-        if ((state ^ current_state) & 0xff)
+
+        // 起步就在十字白线时，先离开白线再开始计数，避免 forward1 立刻判到达。
+        if (skip_initial_crossroad)
+        {
+            if (current_state == 0u)
+            {
+                skip_initial_crossroad = 0u;
+                state = 0u;
+                last_transition_tick = mpu6050_get_ctrl_tick20ms();
+            }
+        }
+        else if ((state ^ current_state) & 0xff)
         {
             state = current_state;
             flag++;

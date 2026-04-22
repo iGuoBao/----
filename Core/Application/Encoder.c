@@ -1,7 +1,7 @@
 #include "Encoder.h"
 #include "GlobalLocalization.h"
 #include "car_type.h"
-#include "shovel_strategy.h"
+#include "loader_strategy.h"
 #include <stdlib.h>
 int16_t encoderLeft, encoderRight;
 int sevenway_data;
@@ -200,15 +200,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         tim6_at++;
         z_data = Normalization(z);
         motor_pid_control(left_speed, right_speed);
-
+        prev = z;
         if (!receive_flag)
             receive_flag = 1;
-
+        
         static uint16_t oled_flag = 0;
+        static uint16_t oled_clear_flag = 0;
         if (oled_flag++ < 15)
             return;
         char k[40] = "";
         oled_flag = 0;
+
+        if (!is_start_successful())
+        {
+            return;
+        }
         // // 显示坐标
         // sprintf(k, "X:%4d Y:%4d", pose.x_mm, pose.y_mm);
         // OLED_ShowString(0, 0, k, OLED_8X16);
@@ -222,13 +228,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // sprintf(k, "L:%3d R:%3d", encoder_left_speed_mm_s, encoder_right_speed_mm_s);
         // OLED_ShowString(0, 48, k, OLED_8X16);
         // 显示七路传感器
-        // sprintf(k, "S:%d", pose.seven_data);
-        // OLED_ShowString(0, 48, k, OLED_8X16);
-        ShovelStrategyState_t status = ShovelStrategy_GetState();
-        sprintf(k, "Cmd:%d", status);
+        sprintf(k, "S:%d", pose.seven_data);
         OLED_ShowString(0, 48, k, OLED_8X16);
+        // LoaderStrategyState_t status = LoaderStrategy_GetState();
+        // sprintf(k, "Cmd:%d", status);
+        // OLED_ShowString(0, 48, k, OLED_8X16);
 
         OLED_Update();
-        prev = z;
+
+        if (oled_clear_flag++<3)
+            return;
+        OLED_Clear();
+        oled_clear_flag = 0;
     }
 }
