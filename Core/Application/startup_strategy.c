@@ -1,14 +1,5 @@
 #include "startup_strategy.h"
 
-#include <string.h>
-
-#include "GlobalLocalization.h"
-#include "NRF24L01.h"
-#include "OLED.h"
-#include "action.h"
-#include "button.h"
-#include "car_type.h"
-#include "plan.h"
 
 #define STARTUP_CMD_TEXT "START"
 #define STARTUP_CMD_LEN 5u
@@ -22,6 +13,7 @@ typedef struct {
 
 static uint8_t s_nrf_ready = 0;
 static uint8_t s_button_latched[BUTTON_COUNT] = {0};
+static uint8_t should_start = 0u;
 
 static void startup_run_plan_4_a(void)
 {
@@ -94,7 +86,6 @@ static void startup_show_strategy(uint8_t strategy_index)
     index_text[2] = (char)('0' + STARTUP_STRATEGY_COUNT);
     index_text[3] = '\0';
 
-    OLED_Clear();
     OLED_ShowString(0, 0, "Select Strategy", OLED_8X16);
     OLED_ShowString(0, 16, "Index:", OLED_8X16);
     OLED_ShowString(56, 16, index_text, OLED_8X16);
@@ -108,8 +99,6 @@ static void startup_show_strategy(uint8_t strategy_index)
     {
         OLED_ShowString(0, 48, "B3 START NRF OFF", OLED_8X16);
     }
-
-    OLED_Update();
 }
 
 static void startup_nrf_init(void)
@@ -167,7 +156,6 @@ static void startup_nrf_send_start_cmd_if_base(void)
 void startup_strategy_run(void)
 {
     uint8_t strategy_index = 0u;
-    uint8_t should_start = 0u;
 
     startup_nrf_init();
     startup_show_strategy(strategy_index);
@@ -198,10 +186,13 @@ void startup_strategy_run(void)
         delay_20ms(1);
     }
 
-    OLED_Clear();
     OLED_ShowString(0, 0, "Starting", OLED_8X16);
     OLED_ShowString(0, 16, (char *)g_startup_strategies[strategy_index].name, OLED_8X16);
-    OLED_Update();
 
     g_startup_strategies[strategy_index].run();
+}
+
+uint8_t is_start_successful(void)
+{
+    return should_start;
 }

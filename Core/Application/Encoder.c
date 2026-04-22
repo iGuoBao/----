@@ -200,11 +200,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         tim6_at++;
         z_data = Normalization(z);
         motor_pid_control(left_speed, right_speed);
-
+        prev = z;
         if (!receive_flag)
             receive_flag = 1;
+        
 
         static uint16_t oled_flag = 0;
+        static uint16_t oled_clear_flag = 0;
         if (oled_flag++ < 15)
             return;
         char k[40] = "";
@@ -229,6 +231,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         OLED_ShowString(0, 48, k, OLED_8X16);
 
         OLED_Update();
-        prev = z;
+
+        if (oled_clear_flag++<3)
+            return;
+        OLED_Clear();
+        oled_clear_flag = 0;
     }
 }
