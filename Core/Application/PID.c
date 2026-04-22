@@ -298,6 +298,8 @@ static float target;
 static float prev_sevenway = 0.0f;
 static int prev_motion_dir = 0;
 static uint32_t mpu6050_ctrl_tick20ms = 0;
+#define SEVENWAY_CENTER_ALPHA 0.12f
+#define SEVENWAY_CENTER_GAIN 1.20f
 // Ѳ�߿��ƺ�����20ms���ڵ��ã�
 void mpu6050_sevenway_control(int speed)
 {
@@ -312,7 +314,7 @@ void mpu6050_sevenway_control(int speed)
 
     speed_abs = abs(speed);
     motion_dir = (speed >= 0) ? 1 : -1;
-    sevenway_for_control = (float)(motion_dir * sevenway_data);
+    sevenway_for_control = (float)(motion_dir * sevenway_data) * SEVENWAY_CENTER_GAIN;
 
     if (prev_motion_dir != 0 && prev_motion_dir != motion_dir)
     {
@@ -324,24 +326,25 @@ void mpu6050_sevenway_control(int speed)
     }
     prev_motion_dir = motion_dir;
 
-    delta = 0.05f * sevenway_for_control + 0.95f * delta;
+    // 提高七路误差进入控制环的速度，增强“回中”能力。
+    delta = SEVENWAY_CENTER_ALPHA * sevenway_for_control + (1.0f - SEVENWAY_CENTER_ALPHA) * delta;
     if (speed_abs > 70)
     {
-        ms_c.output_limit = 15.0f;
+        ms_c.output_limit = 22.0f;
         if (fabsf(delta) >= 24)
-            ms_c.Kp = 0.8f;
+            ms_c.Kp = 1.2f;
         else if (fabsf(delta) >= 19)
-            ms_c.Kp = 0.6f;
+            ms_c.Kp = 1.0f;
         else if (fabsf(delta) >= 9)
-            ms_c.Kp = 0.5f;
+            ms_c.Kp = 0.85f;
         else
-            ms_c.Kp = 0.5f;
+            ms_c.Kp = 0.75f;
     }
     else
     {
-        ms_c.output_limit = 30.0f;
-        ms_c.Kp = 0.5f;
-        ms_c.Kd = 0.1f;
+        ms_c.output_limit = 34.0f;
+        ms_c.Kp = 0.9f;
+        ms_c.Kd = 0.15f;
     }
     data__l = PID_Update(&ms_c, 0, delta);
     target = Normalization(target + data__l);
