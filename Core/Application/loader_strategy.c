@@ -8,6 +8,7 @@
 
 #define LOADER_RECOVERY_MAX_RETRY 3u
 #define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
+#define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
 
 typedef struct
 {
@@ -19,8 +20,8 @@ typedef struct
     int8_t last_patrol_index;
     uint32_t rng_state;
 
-    AStar_GridPoint_t score_point;
-    uint8_t score_point_valid;
+    AStar_GridPoint_t score_points[LOADER_STRATEGY_MAX_SCORE_POINTS];
+    uint8_t score_point_count;
     uint8_t non_patrol_penalty;
 
     LoaderStrategyState_t state;
@@ -280,14 +281,53 @@ static uint8_t is_preferred_grid(int16_t x, int16_t y)
         }
     }
 
-    if (s_ctx.score_point_valid &&
-        (int16_t)s_ctx.score_point.x == x &&
-        (int16_t)s_ctx.score_point.y == y)
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
     {
-        return 1;
+        if ((int16_t)s_ctx.score_points[i].x == x &&
+            (int16_t)s_ctx.score_points[i].y == y)
+        {
+            return 1;
+        }
     }
 
     return 0;
+}
+
+static uint8_t select_nearest_score_point(AStar_GridPoint_t *out_goal)
+{
+    GlobalPose_t pose;
+    int16_t now_x = 0;
+    int16_t now_y = 0;
+    uint8_t best_idx = 0;
+    uint16_t best_dist = 0xFFFFu;
+
+    if (out_goal == NULL || s_ctx.score_point_count == 0)
+    {
+        return 0;
+    }
+
+    if (s_ctx.score_point_count == 1)
+    {
+        *out_goal = s_ctx.score_points[0];
+        return 1;
+    }
+
+    pose = GlobalLoc_GetPose();
+    get_pose_grid_now(&pose, &now_x, &now_y);
+
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
+    {
+        uint16_t dist = (uint16_t)(abs_diff_i16(now_x, (int16_t)s_ctx.score_points[i].x) +
+                                   abs_diff_i16(now_y, (int16_t)s_ctx.score_points[i].y));
+        if (dist < best_dist)
+        {
+            best_dist = dist;
+            best_idx = i;
+        }
+    }
+
+    *out_goal = s_ctx.score_points[best_idx];
+    return 1;
 }
 
 static void apply_non_patrol_penalty(AStar_Map_t *map)
@@ -479,9 +519,23 @@ uint8_t LoaderStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
         return 0;
     }
 
-    s_ctx.score_point.x = (int8_t)score_x;
-    s_ctx.score_point.y = (int8_t)score_y;
-    s_ctx.score_point_valid = 1;
+    for (uint8_t i = 0; i < s_ctx.score_point_count; i++)
+    {
+        if ((int16_t)s_ctx.score_points[i].x == score_x &&
+            (int16_t)s_ctx.score_points[i].y == score_y)
+        {
+            return 1;
+        }
+    }
+
+    if (s_ctx.score_point_count >= LOADER_STRATEGY_MAX_SCORE_POINTS)
+    {
+        return 0;
+    }
+
+    s_ctx.score_points[s_ctx.score_point_count].x = (int8_t)score_x;
+    s_ctx.score_points[s_ctx.score_point_count].y = (int8_t)score_y;
+    s_ctx.score_point_count++;
     return 1;
 }
 
@@ -548,8 +602,9 @@ TranslateRouteCmd_Status_t LoaderStrategy_GetLastTranslateStatus(void)
 uint8_t LoaderStrategy_RunOnce(void)
 {
     int16_t next_index;
+    AStar_GridPoint_t return_goal;
 
-    if (!s_ctx.score_point_valid || s_ctx.patrol_count == 0)
+    if (s_ctx.score_point_count == 0 || s_ctx.patrol_count == 0)
     {
         s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
         return 0;
@@ -584,7 +639,13 @@ uint8_t LoaderStrategy_RunOnce(void)
         return 1;
     }
 
-    if (!execute_to_goal(s_ctx.score_point))
+    if (!select_nearest_score_point(&return_goal))
+    {
+        s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_ERR_PARAM;
+        return 0;
+    }
+
+    if (!execute_to_goal(return_goal))
     {
         return 0;
     }

@@ -21,8 +21,9 @@ typedef enum
 void LoaderStrategy_Init(void);
 
 /**
- * @brief 设置得分区目标栅格点。
- * @return 1=成功, 0=参数非法
+ * @brief 添加得分区目标栅格点（最多 2 个）。
+ * @note 回得分区时会自动选择离当前位置更近的点。
+ * @return 1=成功, 0=参数非法或超过上限
  */
 uint8_t LoaderStrategy_SetScorePoint(int16_t score_x, int16_t score_y);
 
