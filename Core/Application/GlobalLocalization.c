@@ -209,21 +209,14 @@ void GlobalLoc_Periodic(void)
             int32_t step_x = 0;
             int32_t step_y = 0;
             int32_t step_count = 1;
-            int32_t next_x;
-            int32_t next_y;
 
-            yaw_to_grid_step(s_pose.yaw, &step_x, &step_y);
-
-            next_x = s_pose.x_grid + step_x;
-            next_y = s_pose.y_grid + step_y;
-
-            // if (is_crossroad_skip_edge(s_pose.x_grid, s_pose.y_grid, next_x, next_y))
-            // {
-            //     step_count = 2;
-            // }
-
-            s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
-            s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
+            // 最小策略：只在前进时推进到下一个预期格点。
+            if (s_pose.linear_velocity_mm_s > 0)
+            {
+                yaw_to_grid_step(s_pose.yaw, &step_x, &step_y);
+                s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
+                s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
+            }
         }
 
         // 十字事件后直接对齐到栅格毫米坐标
