@@ -204,13 +204,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (!receive_flag)
             receive_flag = 1;
         
-
         static uint16_t oled_flag = 0;
         static uint16_t oled_clear_flag = 0;
         if (oled_flag++ < 15)
             return;
         char k[40] = "";
         oled_flag = 0;
+
+        if (!is_start_successful())
+        {
+            return;
+        }
         // // 显示坐标
         // sprintf(k, "X:%4d Y:%4d", pose.x_mm, pose.y_mm);
         // OLED_ShowString(0, 0, k, OLED_8X16);

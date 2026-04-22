@@ -80,6 +80,8 @@ static void startup_show_strategy(uint8_t strategy_index)
     index_text[2] = (char)('0' + STARTUP_STRATEGY_COUNT);
     index_text[3] = '\0';
 
+    OLED_Clear();
+    
     OLED_ShowString(0, 0, "Select Strategy", OLED_8X16);
     OLED_ShowString(0, 16, "Index:", OLED_8X16);
     OLED_ShowString(56, 16, index_text, OLED_8X16);
@@ -93,6 +95,8 @@ static void startup_show_strategy(uint8_t strategy_index)
     {
         OLED_ShowString(0, 48, "B3 START NRF OFF", OLED_8X16);
     }
+
+    OLED_Update();
 }
 
 static void startup_nrf_init(void)
