@@ -430,9 +430,7 @@ void route(char Road[50])
             Servos_open(SERVO_OPEN_PWM);
             break;
         case 'Z':
-            char buf_temp[20];
-            sprintf(buf_temp, "#000PDST\r\n");
-            HAL_UART_Transmit_IT(&huart1, (uint8_t *)buf_temp, strlen(buf_temp));
+            Servos_up(SERVO_STOP_PWM);
             break;
         case 'f':
             // motor_speed_set(45, 45);

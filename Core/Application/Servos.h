@@ -14,6 +14,7 @@ void Servos_Init(void);
 
 void Servos_up(int position);
 void Servos_down(int position);
+void Servos_stop(int position);
 void Servos_close(int position);
 void Servos_open(int position);
 #endif

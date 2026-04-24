@@ -52,11 +52,78 @@ static void startup_test_servo_loop(void)
     route("S");
 }
 
+static void startup_test_servo_pwm(void)
+{
+    /**
+     * @brief
+     * 先标定预期的四个高度
+     * 1 底部
+     * 2 能抓2分的高度
+     * 3 能抓满分的高度
+     * 4 高处，不会被圆柱挡住的高度
+     * 
+     * 预期 能够准确到达四个高度
+     * 
+     * 从1到4
+     * 从4到1
+     * 从1到4
+     * 
+     * 从4到3
+     * 从3到4
+     * 
+     * 从4到2
+     * 从2到4
+     * 
+     * 2和3 基本都是从4过渡的 尽可能保证相同
+     */
+    // 从1到4
+    route("T");
+    delay_20ms(100);
+    route("Z");
+    delay_20ms(100);
+    // 从4到1
+    route("D");
+    delay_20ms(100);
+    route("Z");
+    delay_20ms(100);
+    // 从4到1
+    route("T");
+    delay_20ms(100);
+    route("Z");
+    delay_20ms(100);
+
+    // 从4到3
+    route("D");
+    delay_20ms(50);
+    route("Z");
+    delay_20ms(100);
+
+    // 从3到4
+    route("T");
+    delay_20ms(50);
+    route("Z");
+    delay_20ms(100);
+
+    // 从4到2
+    route("D");
+    delay_20ms(75);
+    route("Z");
+    delay_20ms(100);
+
+    // 从2到4
+    route("T");
+    delay_20ms(75);
+    route("Z");
+    delay_20ms(100);
+    
+}
+
 static const StartupStrategy_t g_startup_strategies[] = {
     {"R1 C GO L", startup_run_plan_4_a},
     {"R1 C GO R", startup_run_plan_4_b},
     {"R1 L GO LOOP", startup_run_loader_reset_loop},
     {"TEST SERVO", startup_test_servo_loop},
+    {"TEST SERVO PWM"}, startup_test_servo_pwm},
 };
 
 #define STARTUP_STRATEGY_COUNT ((uint8_t)(sizeof(g_startup_strategies) / sizeof(g_startup_strategies[0])))

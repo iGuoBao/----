@@ -43,6 +43,19 @@ void Servos_Init(void){
 }
 #endif
 
+void Servos_stop(int position) {
+#if defined(NEW_SERVO_0)
+	int _pos = SERVO_STOP_PWM;
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
+#else
+	int _pos = SERVO_STOP_PWM;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
+#endif
+	// delay_20ms(50);
+}
+
 
 void Servos_down(int position) {
 #if defined(NEW_SERVO_0)
@@ -55,7 +68,7 @@ void Servos_down(int position) {
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	 
-	 delay_20ms(50);
+	//  delay_20ms(50);
 }
 
 void Servos_up(int position) {
@@ -68,7 +81,7 @@ void Servos_up(int position) {
 	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
-	delay_20ms(50);
+	// delay_20ms(50);
 } 
 
 void Servos_open(int position) {	
