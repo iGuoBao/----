@@ -153,16 +153,6 @@ static void yaw_to_forward_step(float yaw_deg, int8_t *dx, int8_t *dy)
     *dy = step_dy[best];
 }
 
-static uint8_t has_reached_goal(AStar_GridPoint_t goal)
-{
-    GlobalPose_t pose = GlobalLoc_GetPose();
-    int16_t now_x = 0;
-    int16_t now_y = 0;
-
-    get_pose_grid_now(&pose, &now_x, &now_y);
-    return (now_x == (int16_t)goal.x && now_y == (int16_t)goal.y) ? 1u : 0u;
-}
-
 static void mark_front_obstacle_from_pose(void)
 {
     GlobalPose_t pose = GlobalLoc_GetPose();
@@ -476,7 +466,7 @@ static uint8_t run_route_once(AStar_GridPoint_t goal,
         loader_strategy_debug_oled("MOT", (int16_t)goal.x, (int16_t)goal.y, 0);
     }
 
-    if (!(*motion_fault) && has_reached_goal(goal))
+    if (!(*motion_fault))
     {
         *goal_reached = 1;
     }
