@@ -41,7 +41,15 @@ static void startup_run_loader_reset_loop(void)
 
 static void startup_test_servo_loop(void)
 {
-    route("OwKwtwwwwdwwwS");
+    // 推走方块 然后回去
+    route("O2wwbbw1");
+    // 尝试右侧抓走对方满分环
+    // route("T1RfDKTbO");
+    route("tRwwwfOwDwKTwwwbwOww");
+    // 尝试右侧拿走2分
+    // route("AfDKTbORd");
+    route("LLwwwfOwDwwKwwTwwwbwOdww");
+    route("S");
 }
 
 static const StartupStrategy_t g_startup_strategies[] = {

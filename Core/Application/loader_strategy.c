@@ -525,17 +525,17 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         {
             // 明确静态阻挡：立刻标记前方格子，下一轮重规划避开。
             mark_front_obstacle_from_pose();
+
+            if (!recovery_backoff_one_step())
+            {
+                loader_strategy_debug_oled("BOF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
+                return 0;
+            }
         }
         else if ((uint8_t)(attempt + 1u) >= LOADER_RECOVERY_DRIFT_MARK_AFTER)
         {
             // 连续漂移恢复失败后，升级为疑似静态阻挡，避免重复走同一路径。
             mark_front_obstacle_from_pose();
-        }
-
-        if (!recovery_backoff_one_step())
-        {
-            loader_strategy_debug_oled("BOF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
-            return 0;
         }
     }
 
