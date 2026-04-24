@@ -45,12 +45,12 @@ void Servos_Init(void){
 
 void Servos_stop(int position) {
 #if defined(NEW_SERVO_0)
-	int _pos = SERVO_STOP_PWM;
-	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, 2);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	int _pos = SERVO_STOP_PWM;
-	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, 2);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	// delay_20ms(50);
@@ -59,12 +59,12 @@ void Servos_stop(int position) {
 
 void Servos_down(int position) {
 #if defined(NEW_SERVO_0)
-	int _pos = SERVO_RETRACT_PWM;
-	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, 0);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	int _pos = SERVO_RETRACT_PWM;
-	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, 0);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	 
@@ -73,12 +73,12 @@ void Servos_down(int position) {
 
 void Servos_up(int position) {
 #if defined(NEW_SERVO_0)
-	int _pos = SERVO_LIFT_PWM;
-	sprintf(k,"#000P%04dT000%d!\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d!\r\n", _pos, 0);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #else
-	int _pos = SERVO_LIFT_PWM;
-	sprintf(k,"#000P%04dT000%d\r\n", _pos, position);
+	int _pos = position;
+	sprintf(k,"#000P%04dT000%d\r\n", _pos, 0);
 	HAL_UART_Transmit_IT(&huart1,(uint8_t *)k ,strlen(k));
 #endif
 	// delay_20ms(50);

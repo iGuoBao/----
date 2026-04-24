@@ -28,8 +28,10 @@
 #define SERVO_OPEN_PWM      1150  // 爪子开 pwm
 #define SERVO_CLOSE_PWM     1550 // 爪子关 pwm
 
-#define SERVO_LIFT_PWM      2159  // 升降升 pwm
-#define SERVO_RETRACT_PWM   950  // 升降降 pwm
+#define SERVO_LIFT_PWM      2100  // 升降升 pwm
+#define SERVO_RETRACT_PWM   900  // 升降降 pwm
+#define SERVO_LIFT_PWM_t    1800
+#define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_dt_TIME    0 // d 正常的升降 时间
 #define SERVO_DT_TIME    0 // D 正常的升降 时间
@@ -71,8 +73,10 @@
 #define SERVO_OPEN_PWM      1040  // 爪子开 pwm
 #define SERVO_CLOSE_PWM     1830 // 爪子关 pwm
 
-#define SERVO_LIFT_PWM      2049  // 升降升 pwm
-#define SERVO_RETRACT_PWM   944  // 升降降 pwm
+#define SERVO_LIFT_PWM      2100  // 升降升 pwm
+#define SERVO_RETRACT_PWM   900  // 升降降 pwm
+#define SERVO_LIFT_PWM_t    1800
+#define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_dt_TIME    1 // d 正常的升降 时间
 #define SERVO_DT_TIME    2 // D 正常的升降 时间

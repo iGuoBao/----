@@ -78,41 +78,41 @@ static void startup_test_servo_pwm(void)
      */
     // 从1到4
     route("T");
-    delay_20ms(100);
+    delay_20ms(150);
     route("Z");
     delay_20ms(100);
     // 从4到1
     route("D");
-    delay_20ms(100);
+    delay_20ms(120);
     route("Z");
     delay_20ms(100);
     // 从4到1
     route("T");
-    delay_20ms(100);
+    delay_20ms(150);
     route("Z");
     delay_20ms(100);
 
     // 从4到3
     route("D");
-    delay_20ms(50);
+    delay_20ms(32);
     route("Z");
     delay_20ms(100);
 
     // 从3到4
     route("T");
-    delay_20ms(50);
+    delay_20ms(67);
     route("Z");
     delay_20ms(100);
 
     // 从4到2
     route("D");
-    delay_20ms(75);
+    delay_20ms(53);
     route("Z");
     delay_20ms(100);
 
     // 从2到4
     route("T");
-    delay_20ms(75);
+    delay_20ms(105);
     route("Z");
     delay_20ms(100);
     
@@ -123,7 +123,7 @@ static const StartupStrategy_t g_startup_strategies[] = {
     {"R1 C GO R", startup_run_plan_4_b},
     {"R1 L GO LOOP", startup_run_loader_reset_loop},
     {"TEST SERVO", startup_test_servo_loop},
-    {"TEST SERVO PWM"}, startup_test_servo_pwm},
+    {"TEST SERVO PWM", startup_test_servo_pwm},
 };
 
 #define STARTUP_STRATEGY_COUNT ((uint8_t)(sizeof(g_startup_strategies) / sizeof(g_startup_strategies[0])))
