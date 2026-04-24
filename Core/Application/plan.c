@@ -24,7 +24,19 @@ void plan_4_a()
     // 满分前
     route("1R1L1R");
     // 得分
-    route("twwwfObd");
+    // route("twwwfObd");
+    // 从1到4
+    route("T");
+    delay_20ms(150);
+    route("Z");
+    delay_20ms(100);
+    route("fOb");
+
+    // 从4到1
+    route("D");
+    delay_20ms(120);
+    route("Z");
+    delay_20ms(100);
 
     // 在左侧对方区域满分环
     // route("wwOwdwf1L1Kw2R1L1RtwwwfObd");
@@ -39,8 +51,25 @@ void plan_4_a()
     route("2wwbbw1");
     
     // 尝试右侧拿走2分
-    // route("TRfDKtbK");
-    route("tRwwwfODwwwKwwTwwwbwODw");
+    // route("tRwwwfODwwwKwwTwwwbwODw");
+    // 从1到4
+    route("T");
+    delay_20ms(150);
+    route("Z");
+    delay_20ms(100);
+    route("ORf");
+    // 从4到2
+    route("D");
+    delay_20ms(53);
+    route("Z");
+    delay_20ms(100);
+    route("Kww");
+    // 从2到4
+    route("T");
+    delay_20ms(105);
+    route("Z");
+    delay_20ms(100);
+    route("b");
 
     route("S");
 }
@@ -78,11 +107,41 @@ void plan_4_b()
     // 推走方块 然后回去
     route("2wwbbw1");
     // 尝试右侧抓走对方满分环
-    // route("T1RfDKTbO");
-    route("tRwwwfODwKTwwwbwOww");
+    // route("tRwwwfODwKTwwwbwOww");
+    // 从1到4
+    route("T");
+    delay_20ms(150);
+    route("Z");
+    delay_20ms(100);
+    route("RwfO");
+    // 从4到3
+    route("D");
+    delay_20ms(32);
+    route("Z");
+    delay_20ms(100);
+    route("Kww");
+    // 从3到4
+    route("T");
+    delay_20ms(67);
+    route("Z");
+    delay_20ms(100);
+    route("bwOww");
+
+
     // 尝试右侧拿走2分
-    // route("AfDKTbORd");
-    route("LLwwwfODwwKwwTwwwbwOdww");
+    route("LLwwwfO");
+    // 从4到2
+    route("D");
+    delay_20ms(53);
+    route("Z");
+    delay_20ms(100);
+    route("Kww");
+    // 从2到4
+    route("T");
+    delay_20ms(105);
+    route("Z");
+    delay_20ms(100);
+    route("b");
     route("S");
 }
 

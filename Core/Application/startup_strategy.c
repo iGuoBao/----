@@ -44,11 +44,41 @@ static void startup_test_servo_loop(void)
     // 推走方块 然后回去
     route("O2wwbbw1");
     // 尝试右侧抓走对方满分环
-    // route("T1RfDKTbO");
-    route("tRwwwfOwDwKTwwwbwOww");
+    // route("tRwwwfODwKTwwwbwOww");
+    // 从1到4
+    route("T");
+    delay_20ms(150);
+    route("Z");
+    delay_20ms(100);
+    route("RwfO");
+    // 从4到3
+    route("D");
+    delay_20ms(32);
+    route("Z");
+    delay_20ms(100);
+    route("Kww");
+    // 从3到4
+    route("T");
+    delay_20ms(67);
+    route("Z");
+    delay_20ms(100);
+    route("bwOww");
+
+
     // 尝试右侧拿走2分
-    // route("AfDKTbORd");
-    route("LLwwwfOwDwwKwwTwwwbwOdww");
+    route("LLwwwfO");
+    // 从4到2
+    route("D");
+    delay_20ms(53);
+    route("Z");
+    delay_20ms(100);
+    route("Kww");
+    // 从2到4
+    route("T");
+    delay_20ms(105);
+    route("Z");
+    delay_20ms(100);
+    route("b");
     route("S");
 }
 

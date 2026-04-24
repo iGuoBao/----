@@ -1,8 +1,8 @@
 #ifndef CAR_TYPE_H
 #define CAR_TYPE_H
 // 队伍3
-#define CLAW_CAR_3_1     // 没有海绵的爪子
-// #define CLAW_CAR_3_2   // 有海绵的爪子
+// #define CLAW_CAR_3_1     // 没有海绵的爪子
+#define CLAW_CAR_3_2   // 有海绵的爪子
 // #define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
@@ -78,6 +78,7 @@
 #define SERVO_LIFT_PWM_t    1800
 #define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
+
 #define SERVO_dt_TIME    1 // d 正常的升降 时间
 #define SERVO_DT_TIME    2 // D 正常的升降 时间
 // END 舵机参数
