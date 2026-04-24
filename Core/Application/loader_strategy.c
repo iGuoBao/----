@@ -10,7 +10,7 @@
 #define LOADER_RECOVERY_MAX_RETRY 3u
 #define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
 #define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
-// #define LOADER_STRATEGY_DEBUG_OLED 1u
+#define LOADER_STRATEGY_DEBUG_OLED 1u
 
 typedef struct
 {
@@ -56,6 +56,7 @@ static void loader_strategy_debug_oled(const char *tag, int16_t a, int16_t b, in
     OLED_ShowString(0, 16, line1, OLED_8X16);
     OLED_ShowString(0, 32, line2, OLED_8X16);
     OLED_ShowString(0, 48, line3, OLED_8X16);
+    delay_20ms(150);
     OLED_Update();
 }
 #else
