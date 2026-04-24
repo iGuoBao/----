@@ -1,8 +1,8 @@
 #ifndef CAR_TYPE_H
 #define CAR_TYPE_H
 // 队伍3
-#define CLAW_CAR_3_1     // 没有海绵的爪子
-// #define CLAW_CAR_3_2   // 有海绵的爪子
+// #define CLAW_CAR_3_1     // 没有海绵的爪子
+#define CLAW_CAR_3_2   // 有海绵的爪子
 // #define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
@@ -85,9 +85,15 @@
 #define SERVO_LIFT_PWM_t    1800
 #define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
-
-#define SERVO_dt_TIME    1 // d 正常的升降 时间
-#define SERVO_DT_TIME    2 // D 正常的升降 时间
+#define SERVO_1to4_TIME 150 // 从1到4的升降时间
+#define SERVO_4to1_TIME 120 // 从4到1的升降时间
+#define SERVO_4to3_TIME 32 // 从4到3的升降时间
+#define SERVO_3to4_TIME 67 // 从3到4的升降时间
+#define SERVO_4to2_TIME 53 // 从4到2的升降时间
+#define SERVO_2to4_TIME 105 // 从2到4的升降时间
+#define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
+#define SERVO_dt_TIME    0 // d 正常的升降 时间
+#define SERVO_DT_TIME    0 // D 正常的升降 时间
 // END 舵机参数
 
 // START 循迹速度设置
@@ -128,8 +134,15 @@
 #define SERVO_LIFT_PWM      2349  // 升降升 pwm
 #define SERVO_RETRACT_PWM   914  // 升降降 pwm
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
-#define SERVO_dt_TIME    1 // d 正常的升降 时间
-#define SERVO_DT_TIME    2 // D 正常的升降 时间
+#define SERVO_1to4_TIME 150 // 从1到4的升降时间
+#define SERVO_4to1_TIME 120 // 从4到1的升降时间
+#define SERVO_4to3_TIME 32 // 从4到3的升降时间
+#define SERVO_3to4_TIME 67 // 从3到4的升降时间
+#define SERVO_4to2_TIME 53 // 从4到2的升降时间
+#define SERVO_2to4_TIME 105 // 从2到4的升降时间
+#define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
+#define SERVO_dt_TIME    0 // d 正常的升降 时间
+#define SERVO_DT_TIME    0 // D 正常的升降 时间
 // END 舵机参数
 
 // START 循迹速度设置
@@ -172,8 +185,15 @@
 #define SERVO_LIFT_PWM      2349  // 升降升 pwm
 #define SERVO_RETRACT_PWM   914  // 升降降 pwm
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
-#define SERVO_dt_TIME    1 // d 正常的升降 时间
-#define SERVO_DT_TIME    2 // D 正常的升降 时间
+#define SERVO_1to4_TIME 150 // 从1到4的升降时间
+#define SERVO_4to1_TIME 120 // 从4到1的升降时间
+#define SERVO_4to3_TIME 32 // 从4到3的升降时间
+#define SERVO_3to4_TIME 67 // 从3到4的升降时间
+#define SERVO_4to2_TIME 53 // 从4到2的升降时间
+#define SERVO_2to4_TIME 105 // 从2到4的升降时间
+#define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
+#define SERVO_dt_TIME    0 // d 正常的升降 时间
+#define SERVO_DT_TIME    0 // D 正常的升降 时间
 // END 舵机参数
 
 // START 循迹速度设置

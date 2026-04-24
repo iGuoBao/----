@@ -108,41 +108,41 @@ static void startup_test_servo_pwm(void)
      */
     // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
     // 从4到1
     route("D");
-    delay_20ms(120);
+    delay_20ms(SERVO_4to1_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
-    // 从4到1
+    // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
 
     // 从4到3
     route("D");
-    delay_20ms(32);
+    delay_20ms(SERVO_4to3_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
 
     // 从3到4
     route("T");
-    delay_20ms(67);
+    delay_20ms(SERVO_3to4_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
 
     // 从4到2
     route("D");
-    delay_20ms(53);
+    delay_20ms(SERVO_4to2_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
 
     // 从2到4
     route("T");
-    delay_20ms(105);
+    delay_20ms(SERVO_2to4_TIME);
     route("Z");
     delay_20ms(SERVO_DELAY_TIME);
     
