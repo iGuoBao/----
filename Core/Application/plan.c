@@ -27,16 +27,16 @@ void plan_4_a()
     // route("twwwfObd");
     // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("fOb");
 
     // 从4到1
     route("D");
-    delay_20ms(120);
+    delay_20ms(SERVO_4to1_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
 
     // 在左侧对方区域满分环
     // route("wwOwdwf1L1Kw2R1L1RtwwwfObd");
@@ -54,21 +54,21 @@ void plan_4_a()
     // route("tRwwwfODwwwKwwTwwwbwODw");
     // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("ORf");
     // 从4到2
     route("D");
-    delay_20ms(53);
+    delay_20ms(SERVO_4to2_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("Kww");
     // 从2到4
     route("T");
-    delay_20ms(105);
+    delay_20ms(SERVO_2to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("b");
 
     route("S");
@@ -110,21 +110,21 @@ void plan_4_b()
     // route("tRwwwfODwKTwwwbwOww");
     // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("RwfO");
     // 从4到3
     route("D");
-    delay_20ms(32);
+    delay_20ms(SERVO_4to3_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("Kww");
     // 从3到4
     route("T");
-    delay_20ms(67);
+    delay_20ms(SERVO_3to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("bwOww");
 
 
@@ -132,15 +132,15 @@ void plan_4_b()
     route("LLwwwfO");
     // 从4到2
     route("D");
-    delay_20ms(53);
+    delay_20ms(SERVO_4to2_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("Kww");
     // 从2到4
     route("T");
-    delay_20ms(105);
+    delay_20ms(SERVO_2to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("b");
     route("S");
 }

@@ -47,21 +47,21 @@ static void startup_test_servo_loop(void)
     // route("tRwwwfODwKTwwwbwOww");
     // 从1到4
     route("T");
-    delay_20ms(150);
+    delay_20ms(SERVO_1to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("RwfO");
     // 从4到3
     route("D");
-    delay_20ms(32);
+    delay_20ms(SERVO_4to3_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("Kww");
     // 从3到4
     route("T");
-    delay_20ms(67);
+    delay_20ms(SERVO_3to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("bwOww");
 
 
@@ -69,15 +69,15 @@ static void startup_test_servo_loop(void)
     route("LLwwwfO");
     // 从4到2
     route("D");
-    delay_20ms(53);
+    delay_20ms(SERVO_4to2_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("Kww");
     // 从2到4
     route("T");
-    delay_20ms(105);
+    delay_20ms(SERVO_2to4_TIME);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     route("b");
     route("S");
 }
@@ -110,41 +110,41 @@ static void startup_test_servo_pwm(void)
     route("T");
     delay_20ms(150);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     // 从4到1
     route("D");
     delay_20ms(120);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     // 从4到1
     route("T");
     delay_20ms(150);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
 
     // 从4到3
     route("D");
     delay_20ms(32);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
 
     // 从3到4
     route("T");
     delay_20ms(67);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
 
     // 从4到2
     route("D");
     delay_20ms(53);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
 
     // 从2到4
     route("T");
     delay_20ms(105);
     route("Z");
-    delay_20ms(100);
+    delay_20ms(SERVO_DELAY_TIME);
     
 }
 
