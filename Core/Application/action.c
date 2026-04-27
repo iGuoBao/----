@@ -1,7 +1,7 @@
 #include "action.h"
 #include "math.h"
 
-#define FORWARD_STALL_TIMEOUT_20MS 150u
+#define FORWARD_STALL_TIMEOUT_20MS 100u
 
 static uint8_t s_motion_guard_enabled = 0;
 static uint8_t s_motion_fault = 0;
@@ -253,7 +253,7 @@ void forward(int data)
 
         if (back_flag)
             // speed = -speed;
-            speed = -65;
+            speed = -25;
         mpu6050_sevenway_control(speed);
     }
     // motor_speed_set(-50, -50);

@@ -2,8 +2,8 @@
 #define CAR_TYPE_H
 // 队伍3
 // #define CLAW_CAR_3_1     // 没有海绵的爪子
-#define CLAW_CAR_3_2   // 有海绵的爪子
-// #define LOADER_CAR_3_3
+// #define CLAW_CAR_3_2   // 有海绵的爪子
+#define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
 // 队伍4
@@ -133,6 +133,8 @@
 
 #define SERVO_LIFT_PWM      2349  // 升降升 pwm
 #define SERVO_RETRACT_PWM   914  // 升降降 pwm
+#define SERVO_LIFT_PWM_t    1800
+#define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_1to4_TIME 150 // 从1到4的升降时间
 #define SERVO_4to1_TIME 120 // 从4到1的升降时间
@@ -184,6 +186,8 @@
 
 #define SERVO_LIFT_PWM      2349  // 升降升 pwm
 #define SERVO_RETRACT_PWM   914  // 升降降 pwm
+#define SERVO_LIFT_PWM_t    1800
+#define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
 #define SERVO_1to4_TIME 150 // 从1到4的升降时间
 #define SERVO_4to1_TIME 120 // 从4到1的升降时间

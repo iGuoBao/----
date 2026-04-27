@@ -10,7 +10,7 @@
 #define LOADER_RECOVERY_MAX_RETRY 3u
 #define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
 #define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
-#define LOADER_STRATEGY_DEBUG_OLED 1u
+// #define LOADER_STRATEGY_DEBUG_OLED 1u
 
 typedef struct
 {
@@ -478,9 +478,9 @@ static uint8_t run_route_once(AStar_GridPoint_t goal,
 static uint8_t recovery_backoff_one_step(void)
 {
     Action_ResetMotionFault();
-    Action_EnableMotionGuard(1u);
+    // Action_EnableMotionGuard(1u);
     forward(-1);
-    Action_EnableMotionGuard(0u);
+    // Action_EnableMotionGuard(0u);
 
     if (Action_HasMotionFault())
     {
