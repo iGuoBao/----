@@ -15,6 +15,15 @@ typedef enum
     LOADER_STRATEGY_STATE_RETURN_SCORE = 1
 } LoaderStrategyState_t;
 
+typedef enum
+{
+    LOADER_RECOVERY_STATE_IDLE = 0,
+    LOADER_RECOVERY_STATE_NAVIGATE = 1,
+    LOADER_RECOVERY_STATE_RECOVER_LOCALIZE = 2,
+    LOADER_RECOVERY_STATE_RECOVER_TASK = 3,
+    LOADER_RECOVERY_STATE_ABORT = 4
+} LoaderRecoveryState_t;
+
 /**
  * @brief 初始化铲车策略状态机。
  */
@@ -57,6 +66,17 @@ void LoaderStrategy_SetPatrolMinStepDistance(uint8_t min_distance);
 void LoaderStrategy_SetNonPatrolPenalty(uint8_t penalty);
 
 /**
+ * @brief 开关定位异常优先恢复。
+ */
+void LoaderStrategy_EnableLocalizationRecovery(uint8_t enable);
+
+/**
+ * @brief 设置临时障碍衰减周期（策略循环次数）。
+ * @note cycles=0 时按 1 处理。
+ */
+void LoaderStrategy_SetTempObstacleDecayCycles(uint8_t cycles);
+
+/**
  * @brief 获取当前策略状态。
  */
 LoaderStrategyState_t LoaderStrategy_GetState(void);
@@ -65,6 +85,11 @@ LoaderStrategyState_t LoaderStrategy_GetState(void);
  * @brief 获取最近一次路径转译状态。
  */
 TranslateRouteCmd_Status_t LoaderStrategy_GetLastTranslateStatus(void);
+
+/**
+ * @brief 获取最近一次恢复阶段。
+ */
+LoaderRecoveryState_t LoaderStrategy_GetLastRecoveryState(void);
 
 /**
  * @brief 执行一步策略（一次到单个目标点的运行）。

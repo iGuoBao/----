@@ -57,6 +57,13 @@ typedef struct {
 	uint8_t seven_data; // 7路传感器数据变量
 } GlobalPose_t;  // 4*6 + 8 + 2*4 + 4 + 4 = 52字节
 
+typedef enum {
+	GLOBAL_LOC_EXCEPTION_NONE = 0u,
+	GLOBAL_LOC_EXCEPTION_YAW_GRID_MISMATCH = (1u << 0),
+	GLOBAL_LOC_EXCEPTION_CROSSROAD_STUCK = (1u << 1),
+	GLOBAL_LOC_EXCEPTION_LOW_SPEED_CROSSROAD = (1u << 2),
+} GlobalLoc_ExceptionFlag_t;
+
 // 初始化模块。参数为场地尺寸（毫米）
 void GlobalLoc_Init(void);
 
@@ -71,5 +78,8 @@ GlobalPose_t GlobalLoc_GetPose(void);
 
 // 获取当前异常情况
 uint8_t GlobalLoc_GetException(void);
+
+// 清除异常标志（mask=0xFF 清除全部）
+void GlobalLoc_ClearException(uint8_t mask);
 
 #endif // GLOBAL_LOCALIZATION_H

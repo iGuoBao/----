@@ -20,8 +20,13 @@ static float s_last_mpu_yaw = 0.0f;
 // 十字路口检测与栅格定位
 #define CROSSROAD_BITMAP_ALL_WHITE 0x00
 #define CROSSROAD_BITMAP_MIDDLE5_MASK 0x3E  // bit1~bit5
+#define GLOBAL_LOC_LOW_SPEED_THRESHOLD_MM_S 35
+#define GLOBAL_LOC_CROSSROAD_HOLD_SPEED_MM_S 35
+#define GLOBAL_LOC_CROSSROAD_HOLD_MAX_TICKS 12u
 static bool s_crossroad_active = false;
 static bool s_crossroad_anchor_ready = false;
+static uint8_t s_exception_flags = GLOBAL_LOC_EXCEPTION_NONE;
+static uint8_t s_crossroad_hold_ticks = 0u;
 
 typedef struct
 {
@@ -51,6 +56,11 @@ static int32_t clamp_i32(int32_t value, int32_t min_value, int32_t max_value)
     if (value < min_value) return min_value;
     if (value > max_value) return max_value;
     return value;
+}
+
+static int16_t abs_i16(int16_t value)
+{
+    return (value >= 0) ? value : (int16_t)(-value);
 }
 
 static int32_t mm_to_grid_nearest(int32_t mm, int32_t max_grid)
@@ -122,6 +132,11 @@ static bool is_crossroad_skip_edge(int32_t from_x, int32_t from_y, int32_t to_x,
     return false;
 }
 
+static void global_loc_set_exception(uint8_t flag)
+{
+    s_exception_flags |= flag;
+}
+
 void GlobalLoc_Init()
 {
     s_pose.x_mm = GLOBAL_INIT_X_MM;
@@ -133,6 +148,8 @@ void GlobalLoc_Init()
 
     s_crossroad_active = false;
     s_crossroad_anchor_ready = false;
+    s_exception_flags = GLOBAL_LOC_EXCEPTION_NONE;
+    s_crossroad_hold_ticks = 0u;
 
     // 初始化 yaw 过滤器初值
     s_last_mpu_yaw = s_pose.yaw;
@@ -151,6 +168,8 @@ void GlobalLoc_ResetPose(int32_t x_mm, int32_t y_mm, float yaw_deg)
     s_pose.yaw = yaw_deg;
     s_crossroad_active = false;
     s_crossroad_anchor_ready = false;
+    s_exception_flags = GLOBAL_LOC_EXCEPTION_NONE;
+    s_crossroad_hold_ticks = 0u;
 }
 
 /**
@@ -200,6 +219,24 @@ void GlobalLoc_Periodic(void)
 
     // 十字路口触发定位：不再用编码器积分 x/y
     bool is_crossroad = ((s_pose.seven_data & CROSSROAD_BITMAP_MIDDLE5_MASK) == CROSSROAD_BITMAP_ALL_WHITE);
+    if (is_crossroad)
+    {
+        if (s_crossroad_hold_ticks < 0xFFu)
+        {
+            s_crossroad_hold_ticks++;
+        }
+
+        if (s_pose.linear_velocity_mm_s >= GLOBAL_LOC_CROSSROAD_HOLD_SPEED_MM_S &&
+            s_crossroad_hold_ticks > GLOBAL_LOC_CROSSROAD_HOLD_MAX_TICKS)
+        {
+            global_loc_set_exception(GLOBAL_LOC_EXCEPTION_CROSSROAD_STUCK);
+        }
+    }
+    else
+    {
+        s_crossroad_hold_ticks = 0u;
+    }
+
     if (is_crossroad && !s_crossroad_active)
     {
         s_crossroad_active = true;
@@ -209,13 +246,31 @@ void GlobalLoc_Periodic(void)
             int32_t step_x = 0;
             int32_t step_y = 0;
             int32_t step_count = 1;
+            uint8_t block_step = (s_exception_flags != GLOBAL_LOC_EXCEPTION_NONE) ? 1u : 0u;
+
+            if (s_pose.linear_velocity_mm_s > 0 &&
+                abs_i16(s_pose.linear_velocity_mm_s) < GLOBAL_LOC_LOW_SPEED_THRESHOLD_MM_S)
+            {
+                global_loc_set_exception(GLOBAL_LOC_EXCEPTION_LOW_SPEED_CROSSROAD);
+                block_step = 1u;
+            }
 
             // 最小策略：只在前进时推进到下一个预期格点。
             if (s_pose.linear_velocity_mm_s > 0)
             {
                 yaw_to_grid_step(s_pose.yaw, &step_x, &step_y);
-                s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
-                s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
+
+                if (step_x == 0 && step_y == 0)
+                {
+                    global_loc_set_exception(GLOBAL_LOC_EXCEPTION_YAW_GRID_MISMATCH);
+                    block_step = 1u;
+                }
+
+                if (!block_step)
+                {
+                    s_pose.x_grid = clamp_i32(s_pose.x_grid + step_x * step_count, 0, GLOBAL_MAP_X_GRID - 1);
+                    s_pose.y_grid = clamp_i32(s_pose.y_grid + step_y * step_count, 0, GLOBAL_MAP_Y_GRID - 1);
+                }
             }
         }
 
@@ -235,6 +290,27 @@ void GlobalLoc_Periodic(void)
 GlobalPose_t GlobalLoc_GetPose(void)
 {
     return s_pose;
+}
+
+uint8_t GlobalLoc_GetException(void)
+{
+    return s_exception_flags;
+}
+
+void GlobalLoc_ClearException(uint8_t mask)
+{
+    if (mask == 0xFFu)
+    {
+        s_exception_flags = GLOBAL_LOC_EXCEPTION_NONE;
+        s_crossroad_hold_ticks = 0u;
+        return;
+    }
+
+    s_exception_flags &= (uint8_t)(~mask);
+    if ((mask & GLOBAL_LOC_EXCEPTION_CROSSROAD_STUCK) != 0u)
+    {
+        s_crossroad_hold_ticks = 0u;
+    }
 }
 
 
