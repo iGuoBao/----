@@ -148,11 +148,29 @@ static void startup_test_servo_pwm(void)
     
 }
 
+static void startup_test_pwm3901_loop(void)
+{
+    SPI_PMW_Init();
+    while (1)
+    {
+        PMW3901_Delta_t delta = PMW3901_ReadDelta();
+        char buf[32];
+        snprintf(buf, sizeof(buf), "X: %d Y: %d", delta.x, delta.y);
+        // OLED_Clear();
+        
+        OLED_ShowString(0, 0, "PMW3901 Test", OLED_8X16);
+        OLED_ShowString(0, 16, buf, OLED_8X16);
+        // OLED_Update();
+        delay_20ms(1);
+    }
+}
+
 static const StartupStrategy_t g_startup_strategies[] = {
     {"R1 C GO L", startup_run_plan_4_a},
     {"R1 C GO R", startup_run_plan_4_b},
     {"R1 L GO LOOP", startup_run_loader_reset_loop},
     {"TEST SERVO", startup_test_servo_loop},
+    {"TEST PWM3901", startup_test_pwm3901_loop},
     {"TEST SERVO PWM", startup_test_servo_pwm},
 };
 

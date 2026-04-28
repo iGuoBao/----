@@ -44,7 +44,15 @@ void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  /* 
+   * 注意: SPI2 挂载在 APB1(36MHz) 总线上。
+   * STM32F1 硬件分频只能是2的整数次幂。
+   * 16分频 = 36MHz / 16 = 2.25MHz (略微超出2MHz)
+   * 32分频 = 36MHz / 32 = 1.125MHz (严格低于2MHz)
+   * PMW3901 的 SCLK 最高支持 2MHz。为保证稳定，这里设置为 32 分频。
+   * 如果你需要更快的速度可以尝试改成 SPI_BAUDRATEPRESCALER_16 进行超频测试。
+   */
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
