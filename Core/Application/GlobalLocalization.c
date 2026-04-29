@@ -128,7 +128,13 @@ void GlobalLoc_Init()
     s_pose.y_mm = GLOBAL_INIT_Y_MM;
     s_pose.x_grid = GLOBAL_INIT_X_GRID;
     s_pose.y_grid = GLOBAL_INIT_Y_GRID;
-    s_pose.abs_yaw = GLOBAL_INIT_YAW_DEG;
+#if defined(LOADER_CAR_3_3)
+    s_pose.abs_yaw = -90;
+#elif defined(BASE_CAR_3_4)
+    s_pose.abs_yaw = -90;
+#else
+    s_pose.abs_yaw = 0;
+#endif
     s_pose.yaw = 0;
 
     s_crossroad_active = false;

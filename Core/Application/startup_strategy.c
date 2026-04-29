@@ -1,5 +1,14 @@
 #include "startup_strategy.h"
 
+#include "GlobalLocalization.h"
+#include "NRF24L01.h"
+#include "pmw3901.h"
+#include "OLED.h"
+#include "action.h"
+#include "button.h"
+#include "car_type.h"
+#include "plan.h"
+
 
 #define STARTUP_CMD_TEXT "START"
 #define STARTUP_CMD_LEN 5u
@@ -155,10 +164,12 @@ static void startup_test_pwm3901_loop(void)
     {
         PMW3901_Delta_t delta = PMW3901_ReadDelta();
         char buf[32];
-        snprintf(buf, sizeof(buf), "X: %d Y: %d", delta.x, delta.y);
+
         // OLED_Clear();
-        
-        OLED_ShowString(0, 0, "PMW3901 Test", OLED_8X16);
+
+        sprintf(buf, "dx: %d", delta.x);
+        OLED_ShowString(0, 0, buf, OLED_8X16);
+        snprintf(buf, sizeof(buf), "dy: %d", delta.y);
         OLED_ShowString(0, 16, buf, OLED_8X16);
         // OLED_Update();
         delay_20ms(1);

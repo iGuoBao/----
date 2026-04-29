@@ -14,12 +14,8 @@
 #define GLOBAL_INIT_Y_MM  (int32_t)2000  	// 默认y起始位置（毫米）
 #define GLOBAL_INIT_X_GRID GLOBAL_INIT_X_MM / 400
 #define GLOBAL_INIT_Y_GRID GLOBAL_INIT_Y_MM / 400
-#define GLOBAL_INIT_YAW_DEG  (-90.0f) 		// 0度表示出发点方向 逆时针yaw+
-// #if defined(LOADER_CAR_3_3)
-// #define GLOBAL_INIT_YAW_DEG  (-90.0f) 		// 0度表示出发点方向 逆时针yaw+
-// #else
-// #define GLOBAL_INIT_YAW_DEG  (0.0f) 		// 0度表示出发点方向 逆时针yaw+
-// #endif
+
+
 // 地图配置 
 #define GLOBAL_MAP_X_GRID    8 					// 场地x格子数量
 #define GLOBAL_MAP_Y_GRID    10					// 场地y格子数量

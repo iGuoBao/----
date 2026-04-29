@@ -797,6 +797,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Application\loader_strategy.c</FilePath>
             </File>
+            <File>
+              <FileName>pmw3901.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Application\pmw3901.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -85,12 +85,12 @@
 #define SERVO_LIFT_PWM_t    1800
 #define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
-#define SERVO_1to4_TIME 150 // 从1到4的升降时间
-#define SERVO_4to1_TIME 120 // 从4到1的升降时间
-#define SERVO_4to3_TIME 32 // 从4到3的升降时间
-#define SERVO_3to4_TIME 67 // 从3到4的升降时间
-#define SERVO_4to2_TIME 53 // 从4到2的升降时间
-#define SERVO_2to4_TIME 105 // 从2到4的升降时间
+#define SERVO_1to4_TIME 160 // 从1到4的升降时间
+#define SERVO_4to1_TIME 110 // 从4到1的升降时间
+#define SERVO_4to3_TIME 42 // 从4到3的升降时间
+#define SERVO_3to4_TIME 72 // 从3到4的升降时间
+#define SERVO_4to2_TIME 66 // 从4到2的升降时间
+#define SERVO_2to4_TIME 115 // 从2到4的升降时间
 #define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
 #define SERVO_dt_TIME    0 // d 正常的升降 时间
 #define SERVO_DT_TIME    0 // D 正常的升降 时间
