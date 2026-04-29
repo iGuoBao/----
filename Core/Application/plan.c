@@ -20,7 +20,7 @@ void plan_4_a()
     route("LOw1Kw");
     // 特调 下坡 期望变速
     forward_delay(50,80);
-    forward_delay(200,40);
+    forward_delay(150,40);
     // 满分前
     route("1R1L1R");
     // 得分

@@ -2,8 +2,8 @@
 #define CAR_TYPE_H
 // 队伍3
 // #define CLAW_CAR_3_1     // 没有海绵的爪子
-// #define CLAW_CAR_3_2   // 有海绵的爪子
-#define LOADER_CAR_3_3
+#define CLAW_CAR_3_2   // 有海绵的爪子
+// #define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
 // 队伍4

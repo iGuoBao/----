@@ -163,16 +163,30 @@ static void startup_test_pwm3901_loop(void)
     while (1)
     {
         PMW3901_Delta_t delta = PMW3901_ReadDelta();
+        uint8_t pid = SPI_PMW_ReadByte(0x00);
+        uint8_t inv_pid = SPI_PMW_ReadByte(0x5F);
         char buf[32];
 
-        // OLED_Clear();
+        // 累计dx dy
+        static int32_t total_dx = 0;
+        static int32_t total_dy = 0;
+        total_dx += delta.x;
+        total_dy += delta.y; 
 
-        sprintf(buf, "dx: %d", delta.x);
-        OLED_ShowString(0, 0, buf, OLED_8X16);
-        snprintf(buf, sizeof(buf), "dy: %d", delta.y);
-        OLED_ShowString(0, 16, buf, OLED_8X16);
-        // OLED_Update();
+
         delay_20ms(1);
+
+        // 20次 打印一次
+        static uint32_t oled_sh_count = 0;
+        if (oled_sh_count++ % 10 == 0)
+        {
+            snprintf(buf, sizeof(buf), "ID:%02X INV:%02X", pid, inv_pid);
+            OLED_ShowString(0, 0, buf, OLED_8X16);
+            snprintf(buf, sizeof(buf), "dx:%d", total_dx);
+            OLED_ShowString(0, 16, buf, OLED_8X16);
+            snprintf(buf, sizeof(buf), "dy:%d", total_dy);
+            OLED_ShowString(0, 32, buf, OLED_8X16);
+        }
     }
 }
 
