@@ -1,8 +1,8 @@
 #ifndef CAR_TYPE_H
 #define CAR_TYPE_H
 // 队伍3
-// #define CLAW_CAR_3_1     // 没有海绵的爪子
-#define CLAW_CAR_3_2   // 有海绵的爪子
+#define CLAW_CAR_3_1     // 没有海绵的爪子
+// #define CLAW_CAR_3_2   // 有海绵的爪子
 // #define LOADER_CAR_3_3
 // #define BASE_CAR_3_4
 
@@ -33,12 +33,14 @@
 #define SERVO_LIFT_PWM_t    1800
 #define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
-#define SERVO_1to4_TIME 150 // 从1到4的升降时间
+
+#define SERVO_1to4_TIME 152 // 从1到4的升降时间
 #define SERVO_4to1_TIME 120 // 从4到1的升降时间
 #define SERVO_4to3_TIME 32 // 从4到3的升降时间
-#define SERVO_3to4_TIME 67 // 从3到4的升降时间
-#define SERVO_4to2_TIME 53 // 从4到2的升降时间
+#define SERVO_3to4_TIME 75 // 从3到4的升降时间
+#define SERVO_4to2_TIME 60 // 从4到2的升降时间
 #define SERVO_2to4_TIME 105 // 从2到4的升降时间
+
 #define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
 #define SERVO_dt_TIME    0 // d 正常的升降 时间
 #define SERVO_DT_TIME    0 // D 正常的升降 时间
@@ -77,20 +79,22 @@
 // END 小车基础物理参数
 
 // START 舵机参数
-#define SERVO_OPEN_PWM      1040  // 爪子开 pwm
-#define SERVO_CLOSE_PWM     1830 // 爪子关 pwm
+#define SERVO_OPEN_PWM      1110  // 爪子开 pwm
+#define SERVO_CLOSE_PWM     1890 // 爪子关 pwm
 
 #define SERVO_LIFT_PWM      2100  // 升降升 pwm
 #define SERVO_RETRACT_PWM   900  // 升降降 pwm
 #define SERVO_LIFT_PWM_t    1800
 #define SERVO_RETRACT_PWM_d 1200
 #define SERVO_STOP_PWM      1500  // 升降停 pwm
+
 #define SERVO_1to4_TIME 160 // 从1到4的升降时间
 #define SERVO_4to1_TIME 110 // 从4到1的升降时间
-#define SERVO_4to3_TIME 42 // 从4到3的升降时间
-#define SERVO_3to4_TIME 72 // 从3到4的升降时间
-#define SERVO_4to2_TIME 66 // 从4到2的升降时间
+#define SERVO_4to3_TIME 45 // 从4到3的升降时间
+#define SERVO_3to4_TIME 75// 从3到4的升降时间
+#define SERVO_4to2_TIME 68 // 从4到2的升降时间
 #define SERVO_2to4_TIME 115 // 从2到4的升降时间
+
 #define SERVO_DELAY_TIME 50 // 舵机动作完成后的延时时间
 #define SERVO_dt_TIME    0 // d 正常的升降 时间
 #define SERVO_DT_TIME    0 // D 正常的升降 时间

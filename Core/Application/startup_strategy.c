@@ -115,6 +115,13 @@ static void startup_test_servo_pwm(void)
      * 
      * 2和3 基本都是从4过渡的 尽可能保证相同
      */
+
+    route("O");
+    delay_20ms(SERVO_DELAY_TIME);
+    delay_20ms(SERVO_DELAY_TIME);
+    route("K");
+    delay_20ms(SERVO_DELAY_TIME);
+    delay_20ms(SERVO_DELAY_TIME);
     // 从1到4
     route("T");
     delay_20ms(SERVO_1to4_TIME);

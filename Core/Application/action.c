@@ -425,8 +425,10 @@ void route(char Road[50])
             break;
         case 'K':
             Servos_close(SERVO_CLOSE_PWM);
+            Servos_close(SERVO_CLOSE_PWM);
             break;
         case 'O':
+            Servos_open(SERVO_OPEN_PWM);
             Servos_open(SERVO_OPEN_PWM);
             break;
         case 'Z':
@@ -436,7 +438,7 @@ void route(char Road[50])
             // motor_speed_set(45, 45);
             // delay_20ms(70);
             // motor_speed_set(0, 0);
-            forward_delay(95, 45);
+            forward_delay(80, 35);
             break;
         case 'b':
             forward_delay(BACKWARD_TIME_20ms, BACKWARD_SPEED);
