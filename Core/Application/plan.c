@@ -2,6 +2,9 @@
 #include "action.h"
 #include "loader_strategy.h"
 
+#define LOADER_PLAN_ENABLE_LOCALIZE_RECOVERY 1u
+#define LOADER_PLAN_TEMP_OBSTACLE_DECAY_CYCLES 5u
+
 // 去左侧的
 void plan_4_a()
 {
@@ -201,6 +204,8 @@ void plan_loader_patrol_loop(void)
     };
 
     LoaderStrategy_Init();
+    LoaderStrategy_EnableLocalizationRecovery(LOADER_PLAN_ENABLE_LOCALIZE_RECOVERY);
+    LoaderStrategy_SetTempObstacleDecayCycles(LOADER_PLAN_TEMP_OBSTACLE_DECAY_CYCLES);
     LoaderStrategy_SetPatrolPointsBeforeReturn(2);
     LoaderStrategy_SetPatrolMinStepDistance(2);
     LoaderStrategy_SetNonPatrolPenalty(200);

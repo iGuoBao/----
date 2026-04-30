@@ -10,6 +10,8 @@
 #define LOADER_RECOVERY_MAX_RETRY 3u
 #define LOADER_RECOVERY_DRIFT_MARK_AFTER 2u
 #define LOADER_STRATEGY_MAX_SCORE_POINTS 2u
+#define LOADER_TEMP_OBSTACLE_TTL_DEFAULT 5u
+#define LOADER_LOCALIZE_RECOVERY_WAIT_20MS 3u
 // #define LOADER_STRATEGY_DEBUG_OLED 1u
 
 typedef struct
@@ -25,8 +27,17 @@ typedef struct
     AStar_GridPoint_t score_points[LOADER_STRATEGY_MAX_SCORE_POINTS];
     uint8_t score_point_count;
     uint8_t non_patrol_penalty;
+    uint8_t localization_recovery_enabled;
+    uint8_t temp_obstacle_decay_cycles;
+    uint8_t checkpoint_valid;
+    AStar_GridPoint_t checkpoint_grid;
+    float checkpoint_yaw;
+
+    uint8_t temp_obstacle_ttl[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
+    uint8_t permanent_obstacle_mask[ASTAR_MAP_HEIGHT][ASTAR_MAP_WIDTH];
 
     LoaderStrategyState_t state;
+    LoaderRecoveryState_t last_recovery_state;
     TranslateRouteCmd_Status_t last_translate_status;
 } LoaderStrategyContext_t;
 
@@ -154,6 +165,194 @@ static void yaw_to_forward_step(float yaw_deg, int8_t *dx, int8_t *dy)
     *dy = step_dy[best];
 }
 
+static void snapshot_permanent_obstacles(void)
+{
+    AStar_Map_t *map = AStar_GetMap();
+
+    memset(s_ctx.permanent_obstacle_mask, 0, sizeof(s_ctx.permanent_obstacle_mask));
+    memset(s_ctx.temp_obstacle_ttl, 0, sizeof(s_ctx.temp_obstacle_ttl));
+
+    if (map == NULL)
+    {
+        return;
+    }
+
+    for (int16_t y = 0; y < ASTAR_MAP_HEIGHT; y++)
+    {
+        for (int16_t x = 0; x < ASTAR_MAP_WIDTH; x++)
+        {
+            if (map->grid[y][x] == ASTAR_OBSTACLE_COST)
+            {
+                s_ctx.permanent_obstacle_mask[y][x] = 1u;
+            }
+        }
+    }
+}
+
+static void set_temporary_obstacle(int16_t grid_x, int16_t grid_y)
+{
+    if (!is_valid_grid(grid_x, grid_y))
+    {
+        return;
+    }
+
+    AStar_SetObstacle(grid_x, grid_y);
+
+    if (s_ctx.permanent_obstacle_mask[grid_y][grid_x] != 0u)
+    {
+        return;
+    }
+
+    s_ctx.temp_obstacle_ttl[grid_y][grid_x] = s_ctx.temp_obstacle_decay_cycles;
+}
+
+static void decay_temporary_obstacles_once(void)
+{
+    for (int16_t y = 0; y < ASTAR_MAP_HEIGHT; y++)
+    {
+        for (int16_t x = 0; x < ASTAR_MAP_WIDTH; x++)
+        {
+            uint8_t ttl = s_ctx.temp_obstacle_ttl[y][x];
+
+            if (ttl == 0u)
+            {
+                continue;
+            }
+
+            ttl--;
+            s_ctx.temp_obstacle_ttl[y][x] = ttl;
+
+            if (ttl == 0u && s_ctx.permanent_obstacle_mask[y][x] == 0u)
+            {
+                AStar_ClearObstacle(x, y);
+            }
+        }
+    }
+}
+
+static void update_checkpoint_on_goal(AStar_GridPoint_t goal)
+{
+    GlobalPose_t pose = GlobalLoc_GetPose();
+
+    s_ctx.checkpoint_grid = goal;
+    s_ctx.checkpoint_yaw = pose.yaw;
+    s_ctx.checkpoint_valid = 1u;
+}
+
+static uint8_t restore_pose_from_checkpoint(void)
+{
+    int32_t reset_x_mm;
+    int32_t reset_y_mm;
+
+    if (s_ctx.checkpoint_valid == 0u)
+    {
+        return 0;
+    }
+
+    reset_x_mm = (int32_t)s_ctx.checkpoint_grid.x * GLOBAL_GRID_SIZE_MM;
+    reset_y_mm = (int32_t)s_ctx.checkpoint_grid.y * GLOBAL_GRID_SIZE_MM;
+
+    GlobalLoc_ResetPose(reset_x_mm, reset_y_mm, s_ctx.checkpoint_yaw);
+    GlobalLoc_ClearException(0xFFu);
+    Action_ResetMotionFault();
+    return 1;
+}
+
+static void turn_to_absolute_yaw(float target_yaw)
+{
+    float current_yaw = GlobalLoc_GetPose().yaw;
+    float diff = normalize_yaw(target_yaw - current_yaw);
+
+    if (diff > 45.0f && diff < 135.0f)
+    {
+        turn_left();
+        delay_20ms(10);
+    }
+    else if (diff < -45.0f && diff > -135.0f)
+    {
+        turn_right();
+        delay_20ms(10);
+    }
+    else if (diff >= 135.0f || diff <= -135.0f)
+    {
+        turn_around();
+        delay_20ms(10);
+    }
+}
+
+static void go_until_wall(int max_steps)
+{
+    Action_ResetMotionFault();
+    Action_EnableMotionGuard(1u);
+    forward(max_steps);
+    Action_EnableMotionGuard(0u);
+    
+    if (Action_HasMotionFault())
+    {
+        Action_ResetMotionFault();
+        forward_delay(20, -30);
+    }
+}
+
+static void recovery_localize_to_corner(void)
+{
+    float try_y_angle = 90.0f;
+    float opp_y_angle = -90.0f;
+
+    s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_LOCALIZE;
+
+    while (1)
+    {
+        // 阶段 1: 尽可能 x+ 到地图边界
+        turn_to_absolute_yaw(0.0f);
+        go_until_wall(10);
+
+        // 阶段 2: 尽可能 y+ 或 y- 到地图边界
+        turn_to_absolute_yaw(try_y_angle);
+        go_until_wall(10);
+
+        // 阶段 3: 往反方向退 y+-2，然后 x+
+        turn_to_absolute_yaw(opp_y_angle);
+        go_until_wall(2); // Y 反方向走两格
+
+        turn_to_absolute_yaw(0.0f); // 转回 x+
+
+        Action_ResetMotionFault();
+        Action_EnableMotionGuard(1u);
+        forward(1); // 尝试往前走测试是否真正是 x 边界
+        Action_EnableMotionGuard(0u);
+
+        if (Action_HasMotionFault())
+        {
+            // 卡住碰墙，说明确实是 x 的真实边界
+            Action_ResetMotionFault();
+            forward_delay(20, -30);
+
+            // 继续阶段 2：回到真正的角落
+            turn_to_absolute_yaw(try_y_angle);
+            go_until_wall(10);
+
+            // 理论上就是 (7,1) 或 (7,9) 的坐标了，可重新定位
+            int32_t set_x = 7 * GLOBAL_GRID_SIZE_MM;
+            int32_t set_y = (try_y_angle > 0.0f) ? (9 * GLOBAL_GRID_SIZE_MM) : (1 * GLOBAL_GRID_SIZE_MM);
+
+            GlobalLoc_ResetPose(set_x, set_y, try_y_angle);
+            GlobalLoc_ClearException(0xFFu);
+            Action_ResetMotionFault();
+            return;
+        }
+        else
+        {
+            // 还能走说明前面卡住的 x 不是真正的边界
+            // 在 x+ 方向继续深入，并交换下次探测 y 的方向以避免陷入凹形死胡同
+            float tmp = try_y_angle;
+            try_y_angle = opp_y_angle;
+            opp_y_angle = tmp;
+        }
+    }
+}
+
+
 static void mark_front_obstacle_from_pose(void)
 {
     GlobalPose_t pose = GlobalLoc_GetPose();
@@ -175,7 +374,7 @@ static void mark_front_obstacle_from_pose(void)
         return;
     }
 
-    AStar_SetObstacle(obstacle_x, obstacle_y);
+    set_temporary_obstacle(obstacle_x, obstacle_y);
 }
 
 static uint16_t patrol_manhattan_distance(uint8_t idx_a, uint8_t idx_b)
@@ -499,18 +698,38 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         uint8_t motion_fault = 0;
         uint8_t goal_reached = 0;
 
+        if (s_ctx.localization_recovery_enabled &&
+            GlobalLoc_GetException() != GLOBAL_LOC_EXCEPTION_NONE)
+        {
+            recovery_localize_to_corner();
+            continue;
+        }
+
+        s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_NAVIGATE;
+
         if (!run_route_once(goal, &motion_fault, &goal_reached))
         {
             loader_strategy_debug_oled("RRF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
+            s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_ABORT;
             return 0;
+        }
+
+        if (s_ctx.localization_recovery_enabled &&
+            GlobalLoc_GetException() != GLOBAL_LOC_EXCEPTION_NONE)
+        {
+            recovery_localize_to_corner();
+            continue;
         }
 
         if (goal_reached)
         {
+            update_checkpoint_on_goal(goal);
+            s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_NAVIGATE;
             return 1;
         }
 
         motor_speed_set(0, 0);
+        s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_TASK;
 
         if (motion_fault)
         {
@@ -520,6 +739,7 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
             if (!recovery_backoff_one_step())
             {
                 loader_strategy_debug_oled("BOF", (int16_t)goal.x, (int16_t)goal.y, (int16_t)attempt);
+                s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_ABORT;
                 return 0;
             }
         }
@@ -530,7 +750,31 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         }
     }
 
+    if (s_ctx.localization_recovery_enabled && restore_pose_from_checkpoint())
+    {
+        uint8_t motion_fault = 0;
+        uint8_t goal_reached = 0;
+
+        s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_LOCALIZE;
+        delay_20ms(2);
+
+        if (run_route_once(goal, &motion_fault, &goal_reached) && goal_reached)
+        {
+            update_checkpoint_on_goal(goal);
+            s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_NAVIGATE;
+            return 1;
+        }
+
+        if (motion_fault)
+        {
+            s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_TASK;
+            mark_front_obstacle_from_pose();
+            (void)recovery_backoff_one_step();
+        }
+    }
+
     loader_strategy_debug_oled("RTX", (int16_t)goal.x, (int16_t)goal.y, LOADER_RECOVERY_MAX_RETRY);
+    s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_ABORT;
 
     return 0;
 }
@@ -547,8 +791,14 @@ void LoaderStrategy_Init(void)
         s_ctx.rng_state = 0xA341316Cu;
     }
     s_ctx.non_patrol_penalty = LOADER_STRATEGY_NON_PATROL_PENALTY_DEFAULT;
+    s_ctx.localization_recovery_enabled = 1u;
+    s_ctx.temp_obstacle_decay_cycles = LOADER_TEMP_OBSTACLE_TTL_DEFAULT;
+    s_ctx.checkpoint_valid = 0u;
     s_ctx.state = LOADER_STRATEGY_STATE_PATROL;
+    s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_IDLE;
     s_ctx.last_translate_status = TRANSLATE_ROUTE_CMD_OK;
+
+    snapshot_permanent_obstacles();
 }
 
 uint8_t LoaderStrategy_SetScorePoint(int16_t score_x, int16_t score_y)
@@ -627,6 +877,21 @@ void LoaderStrategy_SetNonPatrolPenalty(uint8_t penalty)
     s_ctx.non_patrol_penalty = penalty;
 }
 
+void LoaderStrategy_EnableLocalizationRecovery(uint8_t enable)
+{
+    s_ctx.localization_recovery_enabled = (enable != 0u) ? 1u : 0u;
+}
+
+void LoaderStrategy_SetTempObstacleDecayCycles(uint8_t cycles)
+{
+    if (cycles == 0u)
+    {
+        cycles = 1u;
+    }
+
+    s_ctx.temp_obstacle_decay_cycles = cycles;
+}
+
 LoaderStrategyState_t LoaderStrategy_GetState(void)
 {
     return s_ctx.state;
@@ -635,6 +900,11 @@ LoaderStrategyState_t LoaderStrategy_GetState(void)
 TranslateRouteCmd_Status_t LoaderStrategy_GetLastTranslateStatus(void)
 {
     return s_ctx.last_translate_status;
+}
+
+LoaderRecoveryState_t LoaderStrategy_GetLastRecoveryState(void)
+{
+    return s_ctx.last_recovery_state;
 }
 
 
@@ -649,6 +919,8 @@ uint8_t LoaderStrategy_RunOnce(void)
         loader_strategy_debug_oled("PAR", (int16_t)s_ctx.score_point_count, (int16_t)s_ctx.patrol_count, 0);
         return 0;
     }
+
+    decay_temporary_obstacles_once();
 
     if (s_ctx.state == LOADER_STRATEGY_STATE_PATROL)
     {
