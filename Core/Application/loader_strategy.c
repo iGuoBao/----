@@ -258,21 +258,100 @@ static uint8_t restore_pose_from_checkpoint(void)
     return 1;
 }
 
-static void recovery_localize_once(void)
+static void turn_to_absolute_yaw(float target_yaw)
 {
-    s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_LOCALIZE;
+    float current_yaw = GlobalLoc_GetPose().yaw;
+    float diff = normalize_yaw(target_yaw - current_yaw);
 
+    if (diff > 45.0f && diff < 135.0f)
+    {
+        turn_left();
+        delay_20ms(10);
+    }
+    else if (diff < -45.0f && diff > -135.0f)
+    {
+        turn_right();
+        delay_20ms(10);
+    }
+    else if (diff >= 135.0f || diff <= -135.0f)
+    {
+        turn_around();
+        delay_20ms(10);
+    }
+}
+
+static void go_until_wall(int max_steps)
+{
     Action_ResetMotionFault();
-    forward(-1);
+    Action_EnableMotionGuard(1u);
+    forward(max_steps);
+    Action_EnableMotionGuard(0u);
+    
     if (Action_HasMotionFault())
     {
         Action_ResetMotionFault();
+        forward_delay(20, -30);
     }
-
-    motor_speed_set(0, 0);
-    delay_20ms(LOADER_LOCALIZE_RECOVERY_WAIT_20MS);
-    GlobalLoc_ClearException(0xFFu);
 }
+
+static void recovery_localize_to_corner(void)
+{
+    float try_y_angle = 90.0f;
+    float opp_y_angle = -90.0f;
+
+    s_ctx.last_recovery_state = LOADER_RECOVERY_STATE_RECOVER_LOCALIZE;
+
+    while (1)
+    {
+        // 阶段 1: 尽可能 x+ 到地图边界
+        turn_to_absolute_yaw(0.0f);
+        go_until_wall(10);
+
+        // 阶段 2: 尽可能 y+ 或 y- 到地图边界
+        turn_to_absolute_yaw(try_y_angle);
+        go_until_wall(10);
+
+        // 阶段 3: 往反方向退 y+-2，然后 x+
+        turn_to_absolute_yaw(opp_y_angle);
+        go_until_wall(2); // Y 反方向走两格
+
+        turn_to_absolute_yaw(0.0f); // 转回 x+
+
+        Action_ResetMotionFault();
+        Action_EnableMotionGuard(1u);
+        forward(1); // 尝试往前走测试是否真正是 x 边界
+        Action_EnableMotionGuard(0u);
+
+        if (Action_HasMotionFault())
+        {
+            // 卡住碰墙，说明确实是 x 的真实边界
+            Action_ResetMotionFault();
+            forward_delay(20, -30);
+
+            // 继续阶段 2：回到真正的角落
+            turn_to_absolute_yaw(try_y_angle);
+            go_until_wall(10);
+
+            // 理论上就是 (7,1) 或 (7,9) 的坐标了，可重新定位
+            int32_t set_x = 7 * GLOBAL_GRID_SIZE_MM;
+            int32_t set_y = (try_y_angle > 0.0f) ? (9 * GLOBAL_GRID_SIZE_MM) : (1 * GLOBAL_GRID_SIZE_MM);
+
+            GlobalLoc_ResetPose(set_x, set_y, try_y_angle);
+            GlobalLoc_ClearException(0xFFu);
+            Action_ResetMotionFault();
+            return;
+        }
+        else
+        {
+            // 还能走说明前面卡住的 x 不是真正的边界
+            // 在 x+ 方向继续深入，并交换下次探测 y 的方向以避免陷入凹形死胡同
+            float tmp = try_y_angle;
+            try_y_angle = opp_y_angle;
+            opp_y_angle = tmp;
+        }
+    }
+}
+
 
 static void mark_front_obstacle_from_pose(void)
 {
@@ -622,7 +701,7 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         if (s_ctx.localization_recovery_enabled &&
             GlobalLoc_GetException() != GLOBAL_LOC_EXCEPTION_NONE)
         {
-            recovery_localize_once();
+            recovery_localize_to_corner();
             continue;
         }
 
@@ -638,7 +717,7 @@ static uint8_t execute_to_goal(AStar_GridPoint_t goal)
         if (s_ctx.localization_recovery_enabled &&
             GlobalLoc_GetException() != GLOBAL_LOC_EXCEPTION_NONE)
         {
-            recovery_localize_once();
+            recovery_localize_to_corner();
             continue;
         }
 
